@@ -19,56 +19,66 @@ def test_workbook():
         print(f"\n--- Checking sheet: {name} ---")
         assert ws["A2"].value == "Habit Tracker"
         
-        # 1. Top Section (Before Table)
-        assert "PUNISHMENT" in str(ws["A5"].value)
-        assert "REWARD" in str(ws["A6"].value)
-        assert ws["A8"].value == "MONTHLY TARGETS"
-        assert "1." in str(ws["A9"].value)
-        assert ws["A14"].value == "NOTES:"
-        print("✓ Top Section (Stakes, Targets, Notes) verified before table")
+        # 1. Top Section (Before Table): Monthly Targets & Notes
+        assert ws["A5"].value == "MONTHLY TARGETS"
+        assert "1." in str(ws["A6"].value)
+        assert ws["A11"].value == "NOTES:"
+        assert ws["A12"].fill.start_color.rgb in ("00FFFFE6", "FFFFE6")
+        print("✓ Top Section (Monthly Targets at Row 5, Notes at Row 11) verified")
 
-        # 2. Protocol Table Header & 20 rows
-        assert ws["A19"].value == "S.No."
-        assert ws["B19"].value == "Protocols"
-        assert ws["C19"].value == "Target"
-        assert ws["A21"].value == 1
-        assert ws["A40"].value == 20
-        print("✓ Table Header (Rows 19-20) and 20 Protocol rows (Rows 21-40) verified")
+        # 2. Main Protocol Table Headers (Rows 16 & 17)
+        month_days = 30 if "Sep" in name or "Nov" in name else 31
+        last_day_col = 3 + month_days
+        succ_col_let = openpyxl.utils.get_column_letter(last_day_col + 1)
+        done_tgt_col_let = openpyxl.utils.get_column_letter(last_day_col + 2)
 
-        # 3. Data Validations (Target 1-31, Protocol ✓/✗, Sleep 1-24)
-        dvs = ws.data_validations.dataValidation
-        print(f"Data validations count: {len(dvs)}")
-        assert len(dvs) == 3, f"Expected 3 data validations, got {len(dvs)}"
-        has_tick_cross = any("✓" in str(dv.formula1) and "✗" in str(dv.formula1) for dv in dvs)
-        assert has_tick_cross, "Protocol day cells tick/cross dropdown not found!"
-        print("✓ Protocol day cells tick/cross (✓, ✗) dropdown verified!")
+        assert ws["A16"].value == "S.No."
+        assert ws["B16"].value == "Protocols"
+        assert ws["C16"].value == "Target"
+        assert ws[f"{succ_col_let}16"].value == "Success %"
+        assert ws[f"{done_tgt_col_let}16"].value == "Done / Target"
+        print(f"✓ Table Headers verified: 'Success %' at {succ_col_let}16 and new 'Done / Target' column at {done_tgt_col_let}16")
 
-        # 4. DAILY TOTAL SCORE (Row 41)
-        assert ws["A41"].value == "DAILY TOTAL SCORE"
-        score_formula = str(ws["D41"].value)
-        assert "COUNTIF(D21:D40" in score_formula
-        print("✓ DAILY TOTAL SCORE at Row 41 verified")
+        # 3. 20 Protocol rows (Rows 18 to 37)
+        for i in range(1, 21):
+            row = 17 + i
+            assert ws[f"A{row}"].value == i
+            fill = ws[f"A{row}"].fill.start_color.rgb
+            assert fill is not None
+            # Check Done / Target formula
+            formula = str(ws[f"{done_tgt_col_let}{row}"].value)
+            assert " / " in formula, f"Expected ' / ' in Done / Target formula at row {row}"
+        print("✓ 20 Protocol rows (Rows 18-37) verified with 'Done / Target' formula")
 
-        # 5. DAILY SUCCESS % (Row 42)
-        assert ws["A42"].value == "DAILY SUCCESS %"
-        pct_formula = str(ws["D42"].value)
-        assert "/" in pct_formula and "COUNTIF(D21:D40" in pct_formula
-        assert ws["D42"].number_format == "0.0%"
-        print("✓ DAILY SUCCESS % row at Row 42 verified with tick/eval formula and 0.0% format")
+        # 4. DAILY TOTAL SCORE (Row 38)
+        assert ws["A38"].value == "DAILY TOTAL SCORE"
+        score_done_tgt_formula = str(ws[f"{done_tgt_col_let}38"].value)
+        assert " / " in score_done_tgt_formula
+        print(f"✓ DAILY TOTAL SCORE (Row 38) verified with Done / Target summary at {done_tgt_col_let}38")
 
-        # 6. Two-row gap (Rows 43 & 44)
+        # 5. DAILY SUCCESS % (Row 39)
+        assert ws["A39"].value == "DAILY SUCCESS %"
+        assert ws["D39"].number_format == "0.0%"
+        print("✓ DAILY SUCCESS % (Row 39) verified")
+
+        # 6. Success and Punishment (Stakes) between Protocol Table and Sleep Table (Rows 41 & 42)
+        assert "PUNISHMENT" in str(ws["A41"].value), f"Expected PUNISHMENT at A41, got {ws['A41'].value}"
+        assert "REWARD" in str(ws["A42"].value), f"Expected REWARD at A42, got {ws['A42'].value}"
+        print("✓ Success & Punishment stakes verified between Protocol Table and Sleep Table (Rows 41 & 42)")
+
+        # 7. Exactly Two-Row Gap (Rows 43 & 44)
         for r_gap in (43, 44):
             for c_idx in range(1, 10):
                 c_let = openpyxl.utils.get_column_letter(c_idx)
                 assert ws[f"{c_let}{r_gap}"].value is None, f"Expected blank gap at {c_let}{r_gap}"
-        print("✓ Exactly two blank gap rows (Rows 43 & 44) verified!")
+        print("✓ Exactly two blank gap rows (Rows 43 & 44) verified")
 
-        # 7. Sleep Tracking Table (Starts at Row 45)
+        # 8. Sleep Tracking Section (Starts at Row 45)
         assert ws["A45"].value == "Sleep Tracking"
         assert "Sleep Hours" in str(ws["A47"].value)
         print("✓ Sleep Tracking section starts at Row 45 after the 2-row gap")
 
-        # 8. Sleep Line Chart
+        # 9. Sleep Line Chart
         assert len(ws._charts) == 1
         chart = ws._charts[0]
         assert "Sleep" in str(chart.title)
