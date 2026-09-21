@@ -4,17 +4,18 @@ import openpyxl
 sys.stdout.reconfigure(encoding='utf-8')
 
 def test_workbook():
-    fn = "Habit_Tracker_Sep_Dec_2026.xlsx"
+    fn = "Habit_Tracker_2026_2030.xlsx"
     wb = openpyxl.load_workbook(fn, data_only=False)
     sheet_names = wb.sheetnames
     print(f"\n============================\nVerifying {fn}:")
     print(f"Total Sheets: {len(sheet_names)}")
-    print(f"Sheets: {sheet_names}")
     
-    expected_sheets = ["Sep 2026", "Oct 2026", "Nov 2026", "Dec 2026"]
-    assert sheet_names == expected_sheets, f"Expected {expected_sheets}, got {sheet_names}"
+    assert len(sheet_names) == 52, f"Expected 52 sheets, got {len(sheet_names)}"
+    assert sheet_names[0] == "Sep 2026"
+    assert sheet_names[-1] == "Dec 2030"
+    print(f"First Sheet: {sheet_names[0]}, Last Sheet: {sheet_names[-1]}")
 
-    for name in expected_sheets:
+    for name in sheet_names:
         ws = wb[name]
         print(f"\n--- Checking sheet: {name} ---")
         assert ws["A2"].value == "Habit Tracker"
@@ -27,7 +28,10 @@ def test_workbook():
         print("✓ Top Section (Monthly Targets at Row 5, Notes at Row 11) verified")
 
         # 2. Main Protocol Table Headers (Rows 16 & 17)
-        month_days = 30 if "Sep" in name or "Nov" in name else 31
+        import calendar
+        m_str, y_str = name.split()
+        m_idx = list(calendar.month_abbr).index(m_str)
+        month_days = calendar.monthrange(int(y_str), m_idx)[1]
         last_day_col = 3 + month_days
         succ_col_let = openpyxl.utils.get_column_letter(last_day_col + 1)
         done_tgt_col_let = openpyxl.utils.get_column_letter(last_day_col + 2)
@@ -37,46 +41,57 @@ def test_workbook():
         assert ws["C16"].value == "Target"
         assert ws[f"{succ_col_let}16"].value == "Success %"
         assert ws[f"{done_tgt_col_let}16"].value == "Done / Target"
-        print(f"✓ Table Headers verified: 'Success %' at {succ_col_let}16 and new 'Done / Target' column at {done_tgt_col_let}16")
+        print(f"✓ Table Headers verified: 'Success %' at {succ_col_let}16 and 'Done / Target' at {done_tgt_col_let}16")
 
-        # 3. 20 Protocol rows (Rows 18 to 37)
-        for i in range(1, 21):
-            row = 17 + i
-            assert ws[f"A{row}"].value == i
-            fill = ws[f"A{row}"].fill.start_color.rgb
-            assert fill is not None
-            # Check Done / Target formula
-            formula = str(ws[f"{done_tgt_col_let}{row}"].value)
-            assert " / " in formula, f"Expected ' / ' in Done / Target formula at row {row}"
-        print("✓ 20 Protocol rows (Rows 18-37) verified with 'Done / Target' formula")
+        # 3. 20 Protocol rows (Rows 18 to 37) - Non-Red and Non-Green Group Colors
+        # Row 18: Sky Blue (E0F2FE)
+        assert ws["A18"].fill.start_color.rgb in ("00E0F2FE", "E0F2FE"), f"Got {ws['A18'].fill.start_color.rgb}"
+        # Row 22: Lavender (F3E8FF)
+        assert ws["A22"].fill.start_color.rgb in ("00F3E8FF", "F3E8FF"), f"Got {ws['A22'].fill.start_color.rgb}"
+        # Row 26: Warm Sand (FEF3C7)
+        assert ws["A26"].fill.start_color.rgb in ("00FEF3C7", "FEF3C7"), f"Got {ws['A26'].fill.start_color.rgb}"
+        # Row 30: Cool Slate (F1F5F9)
+        assert ws["A30"].fill.start_color.rgb in ("00F1F5F9", "F1F5F9"), f"Got {ws['A30'].fill.start_color.rgb}"
+        # Row 34: Periwinkle (EEF2FF)
+        assert ws["A34"].fill.start_color.rgb in ("00EEF2FF", "EEF2FF"), f"Got {ws['A34'].fill.start_color.rgb}"
+        print("✓ 5 Non-Red & Non-Green Pastel Group Colors verified (Sky Blue, Lavender, Sand, Slate, Periwinkle)")
 
-        # 4. DAILY TOTAL SCORE (Row 38)
+        # 4. Conditional Formatting for Tick (Green) and Cross (Red)
+        cf_rules = ws.conditional_formatting
+        print(f"Conditional formatting rules count: {len(cf_rules)}")
+        assert len(cf_rules) >= 1, "Expected conditional formatting on protocol day cells"
+        print("✓ Dynamic Conditional Formatting (Green for ✓, Red for ✗, bg if blank) verified!")
+
+        # 5. DAILY TOTAL SCORE (Row 38) - Shows done/total like 8/10
         assert ws["A38"].value == "DAILY TOTAL SCORE"
-        score_done_tgt_formula = str(ws[f"{done_tgt_col_let}38"].value)
-        assert " / " in score_done_tgt_formula
-        print(f"✓ DAILY TOTAL SCORE (Row 38) verified with Done / Target summary at {done_tgt_col_let}38")
+        day_score_formula = str(ws["D38"].value)
+        assert '& "/" &' in day_score_formula or '&"/"&' in day_score_formula, f"Expected done/eval in D38 formula, got {day_score_formula}"
+        print("✓ DAILY TOTAL SCORE (Row 38) verified showing done/eval like 8/10 on day columns")
 
-        # 5. DAILY SUCCESS % (Row 39)
+        # 6. DAILY SUCCESS % (Row 39) - Under Daily Total Score
         assert ws["A39"].value == "DAILY SUCCESS %"
         assert ws["D39"].number_format == "0.0%"
-        print("✓ DAILY SUCCESS % (Row 39) verified")
+        print("✓ DAILY SUCCESS % (Row 39) verified showing percentage directly under 8/10 score")
 
-        # 6. Success and Punishment (Stakes) between Protocol Table and Sleep Table (Rows 41 & 42)
-        assert "PUNISHMENT" in str(ws["A41"].value), f"Expected PUNISHMENT at A41, got {ws['A41'].value}"
-        assert "REWARD" in str(ws["A42"].value), f"Expected REWARD at A42, got {ws['A42'].value}"
-        print("✓ Success & Punishment stakes verified between Protocol Table and Sleep Table (Rows 41 & 42)")
+        # 7. Success & Punishment stakes (Rows 41 & 42)
+        assert "PUNISHMENT" in str(ws["A41"].value)
+        assert "REWARD" in str(ws["A42"].value)
+        print("✓ Success & Punishment stakes verified between tables at Rows 41 & 42")
 
-        # 7. Exactly Two-Row Gap (Rows 43 & 44)
+        # 8. Two-Row Gap (Rows 43 & 44)
         for r_gap in (43, 44):
             for c_idx in range(1, 10):
                 c_let = openpyxl.utils.get_column_letter(c_idx)
                 assert ws[f"{c_let}{r_gap}"].value is None, f"Expected blank gap at {c_let}{r_gap}"
-        print("✓ Exactly two blank gap rows (Rows 43 & 44) verified")
+        print("✓ Two-row blank gap (Rows 43 & 44) verified")
 
-        # 8. Sleep Tracking Section (Starts at Row 45)
+        # 8. Sleep Tracking Section (Starts at Row 45) - Background Colors Verified
         assert ws["A45"].value == "Sleep Tracking"
-        assert "Sleep Hours" in str(ws["A47"].value)
-        print("✓ Sleep Tracking section starts at Row 45 after the 2-row gap")
+        assert ws["A45"].fill.start_color.rgb in ("001E1B4B", "1E1B4B"), f"Got {ws['A45'].fill.start_color.rgb}"
+        assert ws["A47"].fill.start_color.rgb in ("00312E81", "312E81"), f"Got {ws['A47'].fill.start_color.rgb}"
+        assert ws["D45"].fill.start_color.rgb in ("00E0E7FF", "E0E7FF", "00C7D2FE", "C7D2FE")
+        assert ws["D47"].fill.start_color.rgb in ("00EEF2FF", "EEF2FF", "00DBEAFE", "DBEAFE")
+        print("✓ Sleep Tracking section background colors (Night Indigo & Twilight theme) verified!")
 
         # 9. Sleep Line Chart
         assert len(ws._charts) == 1

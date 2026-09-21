@@ -3,6 +3,7 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
+from openpyxl.formatting.rule import CellIsRule
 from openpyxl.chart import LineChart, Reference
 
 def generate_exact_tracker_excel():
@@ -32,42 +33,67 @@ def generate_exact_tracker_excel():
         bottom=Side(border_style="thin", color="D1D5DB")
     )
 
-    # 5 Group colors for 20 protocol rows (4 rows per group)
+    # 5 Non-Red & Non-Green Pastel Group Colors for 20 protocol rows (4 rows per group)
     GROUP_COLORS_HEX = [
-        "FFEBEB",  # Soft Red/Pink: RGB(255, 235, 235) - Rows 1-4
-        "EBF5FF",  # Soft Sky/Blue: RGB(235, 245, 255) - Rows 5-8
-        "EBFFEB",  # Soft Mint/Green: RGB(235, 255, 235) - Rows 9-12
-        "FFFFEB",  # Soft Cream/Yellow: RGB(255, 255, 235) - Rows 13-16
-        "F5EBFF",  # Soft Lavender/Purple: RGB(245, 235, 255) - Rows 17-20
+        "E0F2FE",  # Soft Sky Blue: RGB(224, 242, 254) - Rows 1-4
+        "F3E8FF",  # Soft Lavender: RGB(243, 232, 255) - Rows 5-8
+        "FEF3C7",  # Soft Warm Sand/Amber: RGB(254, 243, 199) - Rows 9-12
+        "F1F5F9",  # Soft Cool Slate: RGB(241, 245, 249) - Rows 13-16
+        "EEF2FF",  # Soft Periwinkle/Indigo: RGB(238, 242, 255) - Rows 17-20
     ]
     
     # Sunday deeper tint in protocol rows
     SUNDAY_GROUP_COLORS_HEX = [
-        "E6D2D2",  # RGB(230, 210, 210)
-        "D2DCE6",  # RGB(210, 220, 230)
-        "D2E6D2",  # RGB(210, 230, 210)
-        "E6E6D2",  # RGB(230, 230, 210)
-        "DCD2E6",  # RGB(220, 210, 230)
+        "BAE6FD",  # RGB(186, 230, 253)
+        "E9D5FF",  # RGB(233, 213, 255)
+        "FDE68A",  # RGB(253, 230, 138)
+        "CBD5E1",  # RGB(203, 213, 225)
+        "C7D2FE",  # RGB(199, 210, 254)
     ]
+
+    # Dynamic Green & Red Fills & Fonts for Selected Tick / Cross
+    CF_TICK_FILL = PatternFill(start_color="DCFCE7", end_color="DCFCE7", fill_type="solid") # Soft Emerald Green
+    CF_TICK_FONT = Font(name=FONT_FAMILY, size=9, bold=True, color="166534") # Dark Emerald
+
+    CF_CROSS_FILL = PatternFill(start_color="FEE2E2", end_color="FEE2E2", fill_type="solid") # Soft Red
+    CF_CROSS_FONT = Font(name=FONT_FAMILY, size=9, bold=True, color="991B1B") # Dark Red
+
+    # Sleep Tracking Theme Colors
+    SLEEP_MAIN_HDR_FILL = PatternFill(start_color="1E1B4B", end_color="1E1B4B", fill_type="solid") # Deep Night Indigo
+    SLEEP_LBL_FILL = PatternFill(start_color="312E81", end_color="312E81", fill_type="solid")      # Twilight Indigo
+    SLEEP_DAY_HDR_FILL = PatternFill(start_color="E0E7FF", end_color="E0E7FF", fill_type="solid")  # Soft Periwinkle Header
+    SLEEP_SUN_HDR_FILL = PatternFill(start_color="C7D2FE", end_color="C7D2FE", fill_type="solid")  # Sunday Accent
+    SLEEP_CELL_FILL = PatternFill(start_color="EEF2FF", end_color="EEF2FF", fill_type="solid")     # Soft Calming Bedtime Blue
+    SLEEP_SUN_CELL_FILL = PatternFill(start_color="DBEAFE", end_color="DBEAFE", fill_type="solid") # Sunday Cell Accent
 
     SUNDAY_HEADER_FILL = PatternFill(start_color="D2D2D2", end_color="D2D2D2", fill_type="solid") # RGB(210, 210, 210)
     NOTES_FILL = PatternFill(start_color="FFFFE6", end_color="FFFFE6", fill_type="solid") # RGB(255, 255, 230)
     WHITE_FILL = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
 
-    MONTH_QUOTES = {
-        9: "Win the morning, win the day.",
-        10: "Discipline equals freedom.",
-        11: "Focus on the process.",
-        12: "Stay consistent."
-    }
-
-    # Only September 2026 to December 2026
-    target_months = [
-        (2026, 9),
-        (2026, 10),
-        (2026, 11),
-        (2026, 12)
+    QUOTES = [
+        "Win the morning, win the day.",
+        "Discipline equals freedom.",
+        "Focus on the process.",
+        "Stay consistent.",
+        "Small daily improvements lead to stunning results.",
+        "We are what we repeatedly do.",
+        "Action is the foundational key to all success.",
+        "Success is the sum of small efforts repeated daily.",
+        "Energy flows where attention goes.",
+        "Your future is created by what you do today.",
+        "Mastery is a journey, not a destination.",
+        "Consistency creates momentum."
     ]
+
+    # Timeline: September 2026 up to December 2030 (52 Months Total)
+    target_months = []
+    # 2026: Sep (9) to Dec (12)
+    for m in range(9, 13):
+        target_months.append((2026, m))
+    # 2027 to 2030: Full years (1 to 12)
+    for y in range(2027, 2031):
+        for m in range(1, 13):
+            target_months.append((y, m))
 
     weekdays_abbr = ['M', 'T', 'W', 'Th', 'F', 'Sa', 'Su']
 
@@ -76,7 +102,9 @@ def generate_exact_tracker_excel():
     # Sleep Hours Dropdown values: 1 to 24
     sleep_dropdown_str = ",".join(str(i) for i in range(1, 25))
 
-    for year, month in target_months:
+    print(f"Generating {len(target_months)} monthly sheets from Sep 2026 to Dec 2030...")
+
+    for month_idx, (year, month) in enumerate(target_months):
         month_name = calendar.month_name[month]
         sheet_title = f"{month_name[:3]} {year}"
         ws = wb.create_sheet(title=sheet_title)
@@ -122,7 +150,7 @@ def generate_exact_tracker_excel():
         ws["A2"].font = Font(name=FONT_FAMILY, size=18, bold=True, color="000000")
         ws["A2"].alignment = Alignment(horizontal="left", vertical="center")
 
-        quote_text = MONTH_QUOTES.get(month, "Win the morning, win the day.")
+        quote_text = QUOTES[month_idx % len(QUOTES)]
         quote_start_col = 8
         quote_end_col = last_day_col - 5
         ws.merge_cells(start_row=2, start_column=quote_start_col, end_row=2, end_column=quote_end_col)
@@ -282,7 +310,7 @@ def generate_exact_tracker_excel():
         for r in (16, 17):
             ws[f"{done_tgt_col_letter}{r}"].border = BORDER_STANDARD
 
-        # --- Rows 18 to 37: 20 Protocol Rows (5 color groups of 4 rows each) ---
+        # --- Rows 18 to 37: 20 Protocol Rows (5 non-red & non-green color groups of 4 rows each) ---
         first_habit_row = 18
         total_habits = 20
         last_habit_row = first_habit_row + total_habits - 1 # 37
@@ -367,13 +395,30 @@ def generate_exact_tracker_excel():
 
             # Col Done / Target: Shows exact number of days done vs target at denominator
             cell_done_tgt = ws[f"{done_tgt_col_letter}{row}"]
-            cell_done_tgt.value = f'=IF(ISBLANK(B{row}), "", IF(ISNUMBER(C{row}), IF(C{row}>0, {row_ticks} & " / " & C{row}, {row_ticks} & " / 0"), IF({row_eval}>0, {row_ticks} & " / " & {row_eval}, "")))'
+            cell_done_tgt.value = f'=IF(ISBLANK(B{row}), "", IF(ISNUMBER(C{row}), IF(C{row}>0, {row_ticks} & "/" & C{row}, {row_ticks} & "/0"), IF({row_eval}>0, {row_ticks} & "/" & {row_eval}, "")))'
             cell_done_tgt.font = Font(name=FONT_FAMILY, size=8, bold=True)
             cell_done_tgt.alignment = Alignment(horizontal="center", vertical="center")
             cell_done_tgt.fill = row_fill
             cell_done_tgt.border = BORDER_STANDARD
 
-        # --- Row 38: DAILY TOTAL SCORE ---
+        # =========================================================================
+        # CONDITIONAL FORMATTING ON PROTOCOL DAY CELLS:
+        # Green fill if tick chosen, Red fill if cross chosen, background if blank
+        # =========================================================================
+        rule_tick = CellIsRule(operator='equal', formula=['"✓"'], fill=CF_TICK_FILL, font=CF_TICK_FONT)
+        rule_tick_alt = CellIsRule(operator='equal', formula=['"✔"'], fill=CF_TICK_FILL, font=CF_TICK_FONT)
+        rule_cross = CellIsRule(operator='equal', formula=['"✗"'], fill=CF_CROSS_FILL, font=CF_CROSS_FONT)
+        rule_cross_alt = CellIsRule(operator='equal', formula=['"x"'], fill=CF_CROSS_FILL, font=CF_CROSS_FONT)
+        rule_cross_upper = CellIsRule(operator='equal', formula=['"X"'], fill=CF_CROSS_FILL, font=CF_CROSS_FONT)
+
+        day_cf_range = f"{first_day_let}{first_habit_row}:{last_day_letter}{last_habit_row}"
+        ws.conditional_formatting.add(day_cf_range, rule_tick)
+        ws.conditional_formatting.add(day_cf_range, rule_tick_alt)
+        ws.conditional_formatting.add(day_cf_range, rule_cross)
+        ws.conditional_formatting.add(day_cf_range, rule_cross_alt)
+        ws.conditional_formatting.add(day_cf_range, rule_cross_upper)
+
+        # --- Row 38: DAILY TOTAL SCORE (Displays done/target like 8/10) ---
         score_row = 38
         ws.row_dimensions[score_row].height = 18
         
@@ -393,8 +438,8 @@ def generate_exact_tracker_excel():
             day_ticks = f'(COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "✓") + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "✔") + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "v") + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "V"))'
             day_eval = f'({day_ticks} + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "✗") + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "x") + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "X"))'
             
-            # Displays tasks done on that day (or done vs evaluated)
-            cell_score.value = f'=IF({day_eval} > 0, {day_ticks}, "")'
+            # Displays done/total tasks like 8/10 on that day
+            cell_score.value = f'=IF({day_eval} > 0, {day_ticks} & "/" & {day_eval}, "")'
             cell_score.font = Font(name=FONT_FAMILY, size=8, bold=True)
             cell_score.alignment = Alignment(horizontal="center", vertical="center")
             cell_score.border = BORDER_STANDARD
@@ -413,12 +458,12 @@ def generate_exact_tracker_excel():
 
         # Row 38 Done / Target Column: Total Done vs Total Target in Month
         done_tgt_summary = ws[f"{done_tgt_col_letter}{score_row}"]
-        done_tgt_summary.value = f'=IF({all_month_ticks} > 0, {all_month_ticks} & " / " & IF({all_month_targets} > 0, {all_month_targets}, {all_month_eval}), "")'
+        done_tgt_summary.value = f'=IF({all_month_ticks} > 0, {all_month_ticks} & "/" & IF({all_month_targets} > 0, {all_month_targets}, {all_month_eval}), "")'
         done_tgt_summary.font = Font(name=FONT_FAMILY, size=8, bold=True)
         done_tgt_summary.alignment = Alignment(horizontal="center", vertical="center")
         done_tgt_summary.border = BORDER_STANDARD
 
-        # --- Row 39: DAILY SUCCESS % ---
+        # --- Row 39: DAILY SUCCESS % (Under Daily Total Score) ---
         pct_row = 39
         ws.row_dimensions[pct_row].height = 18
 
@@ -438,6 +483,7 @@ def generate_exact_tracker_excel():
             day_ticks = f'(COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "✓") + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "✔") + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "v") + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "V"))'
             day_eval = f'({day_ticks} + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "✗") + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "x") + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "X"))'
             
+            # Displays percentage under the 8/10 score
             cell_pct.value = f'=IF({day_eval} > 0, {day_ticks} / {day_eval}, "")'
             cell_pct.font = Font(name=FONT_FAMILY, size=7.5, bold=True)
             cell_pct.alignment = Alignment(horizontal="center", vertical="center")
@@ -482,9 +528,8 @@ def generate_exact_tracker_excel():
         ws.row_dimensions[44].height = 10
 
         # =========================================================================
-        # SLEEP TRACKING SECTION (Starts at Row 45)
+        # SLEEP TRACKING SECTION (Starts at Row 45) - Sophisticated Twilight Theme
         # =========================================================================
-
         # --- Sleep Tracking Header (Rows 45 & 46) ---
         ws.row_dimensions[45].height = 15
         ws.row_dimensions[46].height = 15
@@ -492,22 +537,23 @@ def generate_exact_tracker_excel():
         ws.merge_cells("A45:C46")
         sleep_hdr = ws["A45"]
         sleep_hdr.value = "Sleep Tracking"
-        sleep_hdr.font = Font(name=FONT_FAMILY, size=8.5, bold=True)
+        sleep_hdr.font = Font(name=FONT_FAMILY, size=9, bold=True, color="FFFFFF")
         sleep_hdr.alignment = Alignment(horizontal="center", vertical="center")
         for r in (45, 46):
             for c in ("A", "B", "C"):
+                ws[f"{c}{r}"].fill = SLEEP_MAIN_HDR_FILL
                 ws[f"{c}{r}"].border = BORDER_STANDARD
 
         for d in range(1, days_in_month + 1):
             col = first_day_col + (d - 1)
             c_let = get_column_letter(col)
             is_sunday = (month_weekdays[d - 1] == 'Su')
-            header_fill = SUNDAY_HEADER_FILL if is_sunday else WHITE_FILL
+            header_fill = SLEEP_SUN_HDR_FILL if is_sunday else SLEEP_DAY_HDR_FILL
 
             # Row 45: Day number
             cell_d = ws[f"{c_let}45"]
             cell_d.value = d
-            cell_d.font = Font(name=FONT_FAMILY, size=8, bold=True)
+            cell_d.font = Font(name=FONT_FAMILY, size=8, bold=True, color="1E1B4B")
             cell_d.alignment = Alignment(horizontal="center", vertical="center")
             cell_d.fill = header_fill
             cell_d.border = BORDER_SUNDAY if is_sunday else BORDER_STANDARD
@@ -515,7 +561,7 @@ def generate_exact_tracker_excel():
             # Row 46: Weekday
             cell_w = ws[f"{c_let}46"]
             cell_w.value = month_weekdays[d - 1]
-            cell_w.font = Font(name=FONT_FAMILY, size=7, bold=is_sunday)
+            cell_w.font = Font(name=FONT_FAMILY, size=7, bold=True, color="3730A3" if not is_sunday else "1E1B4B")
             cell_w.alignment = Alignment(horizontal="center", vertical="center")
             cell_w.fill = header_fill
             cell_w.border = BORDER_SUNDAY if is_sunday else BORDER_STANDARD
@@ -527,9 +573,10 @@ def generate_exact_tracker_excel():
         ws.merge_cells(f"A{sleep_row}:C{sleep_row}")
         sleep_lbl = ws[f"A{sleep_row}"]
         sleep_lbl.value = "Sleep Hours (1-24)"
-        sleep_lbl.font = Font(name=FONT_FAMILY, size=8.5, bold=True)
+        sleep_lbl.font = Font(name=FONT_FAMILY, size=8.5, bold=True, color="FFFFFF")
         sleep_lbl.alignment = Alignment(horizontal="center", vertical="center")
         for c in ("A", "B", "C"):
+            ws[f"{c}{sleep_row}"].fill = SLEEP_LBL_FILL
             ws[f"{c}{sleep_row}"].border = BORDER_STANDARD
 
         # DataValidation for Sleep Hours (1 to 24)
@@ -548,13 +595,14 @@ def generate_exact_tracker_excel():
             c_let = get_column_letter(col)
             is_sunday = (month_weekdays[d - 1] == 'Su')
             cell_s = ws[f"{c_let}{sleep_row}"]
-            cell_s.font = Font(name=FONT_FAMILY, size=9, bold=True, color="000000")
+            cell_s.font = Font(name=FONT_FAMILY, size=9, bold=True, color="1E1B4B")
             cell_s.alignment = Alignment(horizontal="center", vertical="center")
             cell_s.number_format = "0"
             if is_sunday:
-                cell_s.fill = SUNDAY_HEADER_FILL
+                cell_s.fill = SLEEP_SUN_CELL_FILL
                 cell_s.border = BORDER_SUNDAY
             else:
+                cell_s.fill = SLEEP_CELL_FILL
                 cell_s.border = BORDER_STANDARD
 
         # --- Sleep Tracking Line Chart (Row 49 to Row 62) ---
@@ -589,7 +637,7 @@ def generate_exact_tracker_excel():
 
         ws.add_chart(chart, "A49")
 
-    output_filename = "Habit_Tracker_Sep_Dec_2026.xlsx"
+    output_filename = "Habit_Tracker_2026_2030.xlsx"
     wb.save(output_filename)
     print(f"Workbook successfully saved to {output_filename}")
 
