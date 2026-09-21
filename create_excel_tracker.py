@@ -11,7 +11,7 @@ def generate_exact_tracker_excel():
     wb.remove(wb.active)
 
     # Typography & Styles
-    FONT_FAMILY = "Arial"
+    FONT_FAMILY = "Arial" 
     
     # Border definitions
     THIN_BORDER_GRAY = Side(border_style="thin", color="000000")
@@ -102,7 +102,6 @@ def generate_exact_tracker_excel():
         success_col_letter = get_column_letter(success_col)
 
         # Set Column Widths:
-        # Increase day columns to 4.8 so numbers selected from dropdowns (1-24) are clearly visible with the arrow!
         ws.column_dimensions['A'].width = 6.5
         ws.column_dimensions['B'].width = 28
         ws.column_dimensions['C'].width = 8.5
@@ -213,7 +212,7 @@ def generate_exact_tracker_excel():
         ws["A14"].font = Font(name=FONT_FAMILY, size=8.5, bold=True)
         ws["A14"].alignment = Alignment(horizontal="left", vertical="center")
 
-        # Rows 15 to 17: Notes Yellow Box (Top Before Table)
+        # Rows 15 to 17: Notes Yellow Box
         for r_note in range(15, 18):
             ws.row_dimensions[r_note].height = 13
         ws.merge_cells(f"A15:{last_day_letter}17")
@@ -297,7 +296,7 @@ def generate_exact_tracker_excel():
         total_habits = 20
         last_habit_row = first_habit_row + total_habits - 1 # 40
 
-        # Setup DataValidation for Target dropdown (1 to 31)
+        # DataValidation for Target dropdown (1 to 31)
         dv_target = DataValidation(
             type="list",
             formula1=f'"{target_dropdown_str}"',
@@ -307,6 +306,17 @@ def generate_exact_tracker_excel():
         )
         ws.add_data_validation(dv_target)
         dv_target.add(f"C{first_habit_row}:C{last_habit_row}")
+
+        # DataValidation for Protocols Day Cells: Tick / Cross ("✓,✗")
+        dv_tick_cross = DataValidation(
+            type="list",
+            formula1='"✓,✗"',
+            allow_blank=True,
+            promptTitle="Status",
+            prompt="Select ✓ (Done) or ✗ (Missed)"
+        )
+        ws.add_data_validation(dv_tick_cross)
+        dv_tick_cross.add(f"{first_day_let}{first_habit_row}:{last_day_letter}{last_habit_row}")
 
         for i in range(1, total_habits + 1):
             row = first_habit_row + (i - 1)
@@ -340,30 +350,34 @@ def generate_exact_tracker_excel():
             cell_tgt.fill = row_fill
             cell_tgt.border = BORDER_STANDARD
 
-            # Cols D..: Day cells
+            # Cols D..: Day cells with dropdown ✓ / ✗
             for d in range(1, days_in_month + 1):
                 col = first_day_col + (d - 1)
                 c_let = get_column_letter(col)
                 is_sunday = (month_weekdays[d - 1] == 'Su')
                 cell_day = ws[f"{c_let}{row}"]
-                cell_day.font = Font(name=FONT_FAMILY, size=8)
+                cell_day.font = Font(name=FONT_FAMILY, size=9, bold=True)
                 cell_day.alignment = Alignment(horizontal="center", vertical="center")
                 cell_day.fill = row_sunday_fill if is_sunday else row_fill
                 cell_day.border = BORDER_SUNDAY if is_sunday else BORDER_STANDARD
 
-            # Col Success %: Dynamic formula supporting numbers (1) and checkmarks (✓, x)
+            # Col Success %: Calculates completion percentage for this protocol row
+            # Ticks = ✓, ✔, v, V; Crosses = ✗, x, X. Unmarked days are auto-discarded!
             cell_succ = ws[f"{success_col_letter}{row}"]
-            calc_expr = f'(COUNT({first_day_let}{row}:{last_day_letter}{row}) + COUNTIF({first_day_let}{row}:{last_day_letter}{row}, "✓") + COUNTIF({first_day_let}{row}:{last_day_letter}{row}, "x") + COUNTIF({first_day_let}{row}:{last_day_letter}{row}, "X"))'
-            cell_succ.value = f'=IF(ISBLANK(B{row}), "", IF(ISNUMBER(C{row}), IF(C{row}>0, {calc_expr}/C{row}, 0), {calc_expr}/{days_in_month}))'
+            row_ticks = f'(COUNTIF({first_day_let}{row}:{last_day_letter}{row}, "✓") + COUNTIF({first_day_let}{row}:{last_day_letter}{row}, "✔") + COUNTIF({first_day_let}{row}:{last_day_letter}{row}, "v") + COUNTIF({first_day_let}{row}:{last_day_letter}{row}, "V"))'
+            row_eval = f'({row_ticks} + COUNTIF({first_day_let}{row}:{last_day_letter}{row}, "✗") + COUNTIF({first_day_let}{row}:{last_day_letter}{row}, "x") + COUNTIF({first_day_let}{row}:{last_day_letter}{row}, "X"))'
+            
+            # If Target is entered, measure against Target; otherwise measure against evaluated days (ticks / (ticks + crosses))
+            cell_succ.value = f'=IF(ISBLANK(B{row}), "", IF(ISNUMBER(C{row}), IF(C{row}>0, {row_ticks}/C{row}, 0), IF({row_eval}>0, {row_ticks}/{row_eval}, "")))'
             cell_succ.font = Font(name=FONT_FAMILY, size=8)
             cell_succ.alignment = Alignment(horizontal="center", vertical="center")
             cell_succ.fill = row_fill
             cell_succ.border = BORDER_STANDARD
             cell_succ.number_format = "0.0%"
 
-        # --- Row 41: DAILY TOTAL SCORE ---
+        # --- Row 41: DAILY TOTAL SCORE (Tasks Completed / Ticks on that day) ---
         score_row = 41
-        ws.row_dimensions[score_row].height = 20
+        ws.row_dimensions[score_row].height = 18
         
         ws.merge_cells(f"A{score_row}:C{score_row}")
         score_label = ws[f"A{score_row}"]
@@ -377,35 +391,78 @@ def generate_exact_tracker_excel():
             col = first_day_col + (d - 1)
             c_let = get_column_letter(col)
             cell_score = ws[f"{c_let}{score_row}"]
-            cell_score.value = f'=IF((COUNT({c_let}{first_habit_row}:{c_let}{last_habit_row}) + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "✓") + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "x") + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "X")) > 0, SUM({c_let}{first_habit_row}:{c_let}{last_habit_row}) + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "✓") + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "x") + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "X"), "")'
+            
+            day_ticks = f'(COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "✓") + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "✔") + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "v") + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "V"))'
+            day_eval = f'({day_ticks} + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "✗") + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "x") + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "X"))'
+            
+            # If any protocol was evaluated on that day, display count of ticks; otherwise blank
+            cell_score.value = f'=IF({day_eval} > 0, {day_ticks}, "")'
             cell_score.font = Font(name=FONT_FAMILY, size=8, bold=True)
             cell_score.alignment = Alignment(horizontal="center", vertical="center")
             cell_score.border = BORDER_STANDARD
 
-        succ_summary = ws[f"{success_col_letter}{score_row}"]
-        succ_summary.value = f'=IF(COUNT({success_col_letter}{first_habit_row}:{success_col_letter}{last_habit_row}) > 0, AVERAGE({success_col_letter}{first_habit_row}:{success_col_letter}{last_habit_row}), "")'
-        succ_summary.font = Font(name=FONT_FAMILY, size=8, bold=True)
-        succ_summary.alignment = Alignment(horizontal="center", vertical="center")
-        succ_summary.border = BORDER_STANDARD
-        succ_summary.number_format = "0.0%"
+        # Row 41 Success Column (Total Completed Tasks in Month)
+        score_summary = ws[f"{success_col_letter}{score_row}"]
+        score_summary.value = f'=IF(COUNT({first_day_let}{score_row}:{last_day_letter}{score_row}) > 0, SUM({first_day_let}{score_row}:{last_day_letter}{score_row}), "")'
+        score_summary.font = Font(name=FONT_FAMILY, size=8, bold=True)
+        score_summary.alignment = Alignment(horizontal="center", vertical="center")
+        score_summary.border = BORDER_STANDARD
 
-        # Row 42: Spacing
-        ws.row_dimensions[42].height = 6
+        # --- Row 42: DAILY SUCCESS % (Row under Daily Total Score) ---
+        pct_row = 42
+        ws.row_dimensions[pct_row].height = 18
+
+        ws.merge_cells(f"A{pct_row}:C{pct_row}")
+        pct_label = ws[f"A{pct_row}"]
+        pct_label.value = "DAILY SUCCESS %"
+        pct_label.font = Font(name=FONT_FAMILY, size=8, bold=True)
+        pct_label.alignment = Alignment(horizontal="right", vertical="center")
+        for c in ("A", "B", "C"):
+            ws[f"{c}{pct_row}"].border = BORDER_STANDARD
+
+        for d in range(1, days_in_month + 1):
+            col = first_day_col + (d - 1)
+            c_let = get_column_letter(col)
+            cell_pct = ws[f"{c_let}{pct_row}"]
+            
+            day_ticks = f'(COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "✓") + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "✔") + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "v") + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "V"))'
+            day_eval = f'({day_ticks} + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "✗") + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "x") + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "X"))'
+            
+            # Flow: tick / total evaluated (e.g. tick / 8 or tick / 9), unselected auto-discarded
+            cell_pct.value = f'=IF({day_eval} > 0, {day_ticks} / {day_eval}, "")'
+            cell_pct.font = Font(name=FONT_FAMILY, size=7.5, bold=True)
+            cell_pct.alignment = Alignment(horizontal="center", vertical="center")
+            cell_pct.border = BORDER_STANDARD
+            cell_pct.number_format = "0.0%"
+
+        # Row 42 Success Column (Average Daily Success % in Month)
+        pct_summary = ws[f"{success_col_letter}{pct_row}"]
+        pct_summary.value = f'=IF(COUNT({first_day_let}{pct_row}:{last_day_letter}{pct_row}) > 0, AVERAGE({first_day_let}{pct_row}:{last_day_letter}{pct_row}), "")'
+        pct_summary.font = Font(name=FONT_FAMILY, size=8, bold=True)
+        pct_summary.alignment = Alignment(horizontal="center", vertical="center")
+        pct_summary.border = BORDER_STANDARD
+        pct_summary.number_format = "0.0%"
 
         # =========================================================================
-        # SLEEP TRACKING SECTION & LIVE CHART
+        # TWO ROW GAP BETWEEN TABLE AND SLEEP TABLE: Rows 43 & 44
+        # =========================================================================
+        ws.row_dimensions[43].height = 10
+        ws.row_dimensions[44].height = 10
+
+        # =========================================================================
+        # SLEEP TRACKING SECTION (Starts at Row 45)
         # =========================================================================
 
-        # --- Sleep Tracking Header (Rows 43 & 44) ---
-        ws.row_dimensions[43].height = 15
-        ws.row_dimensions[44].height = 15
+        # --- Sleep Tracking Header (Rows 45 & 46) ---
+        ws.row_dimensions[45].height = 15
+        ws.row_dimensions[46].height = 15
 
-        ws.merge_cells("A43:C44")
-        sleep_hdr = ws["A43"]
+        ws.merge_cells("A45:C46")
+        sleep_hdr = ws["A45"]
         sleep_hdr.value = "Sleep Tracking"
         sleep_hdr.font = Font(name=FONT_FAMILY, size=8.5, bold=True)
         sleep_hdr.alignment = Alignment(horizontal="center", vertical="center")
-        for r in (43, 44):
+        for r in (45, 46):
             for c in ("A", "B", "C"):
                 ws[f"{c}{r}"].border = BORDER_STANDARD
 
@@ -415,25 +472,24 @@ def generate_exact_tracker_excel():
             is_sunday = (month_weekdays[d - 1] == 'Su')
             header_fill = SUNDAY_HEADER_FILL if is_sunday else WHITE_FILL
 
-            # Row 43: Day number
-            cell_d = ws[f"{c_let}43"]
+            # Row 45: Day number
+            cell_d = ws[f"{c_let}45"]
             cell_d.value = d
             cell_d.font = Font(name=FONT_FAMILY, size=8, bold=True)
             cell_d.alignment = Alignment(horizontal="center", vertical="center")
             cell_d.fill = header_fill
             cell_d.border = BORDER_SUNDAY if is_sunday else BORDER_STANDARD
 
-            # Row 44: Weekday
-            cell_w = ws[f"{c_let}44"]
+            # Row 46: Weekday
+            cell_w = ws[f"{c_let}46"]
             cell_w.value = month_weekdays[d - 1]
             cell_w.font = Font(name=FONT_FAMILY, size=7, bold=is_sunday)
             cell_w.alignment = Alignment(horizontal="center", vertical="center")
             cell_w.fill = header_fill
             cell_w.border = BORDER_SUNDAY if is_sunday else BORDER_STANDARD
 
-        # --- Row 45: Sleep Hours with Dropdown (1 to 24) for each day ---
-        # Height 20 and width 4.8 ensure numbers (1 to 24) are completely clear & visible like Target box!
-        sleep_row = 45
+        # --- Row 47: Sleep Hours with Dropdown (1 to 24) for each day ---
+        sleep_row = 47
         ws.row_dimensions[sleep_row].height = 20
 
         ws.merge_cells(f"A{sleep_row}:C{sleep_row}")
@@ -469,7 +525,9 @@ def generate_exact_tracker_excel():
             else:
                 cell_s.border = BORDER_STANDARD
 
-        # --- Sleep Tracking Line Chart (Row 47 to Row 60) ---
+        # --- Sleep Tracking Line Chart (Row 49 to Row 62) ---
+        ws.row_dimensions[48].height = 6 # Spacing above chart
+
         chart = LineChart()
         chart.title = "Daily Sleep Trend (Hours vs Day)"
         chart.style = 13
@@ -481,10 +539,10 @@ def generate_exact_tracker_excel():
         chart.height = 7.5
         chart.legend = None
 
-        # Data from Row 45 (Sleep Hours)
+        # Data from Row 47 (Sleep Hours)
         data = Reference(ws, min_col=first_day_col, min_row=sleep_row, max_col=last_day_col, max_row=sleep_row)
-        # Categories from Row 43 (Day Numbers)
-        categories = Reference(ws, min_col=first_day_col, min_row=43, max_col=last_day_col, max_row=43)
+        # Categories from Row 45 (Day Numbers)
+        categories = Reference(ws, min_col=first_day_col, min_row=45, max_col=last_day_col, max_row=45)
 
         chart.add_data(data, titles_from_data=False, from_rows=True)
         chart.set_categories(categories)
@@ -497,7 +555,7 @@ def generate_exact_tracker_excel():
             series.marker.size = 5
             series.marker.graphicalProperties.solidFill = "1D4ED8"
 
-        ws.add_chart(chart, "A47")
+        ws.add_chart(chart, "A49")
 
     output_filename = "Habit_Tracker_Sep_Dec_2026.xlsx"
     wb.save(output_filename)

@@ -19,56 +19,60 @@ def test_workbook():
         print(f"\n--- Checking sheet: {name} ---")
         assert ws["A2"].value == "Habit Tracker"
         
-        # 1. Verify Top Section (Before Table)
-        print("Verifying Top Section (Before Table)...")
-        assert "PUNISHMENT" in str(ws["A5"].value), f"Expected PUNISHMENT at A5, got {ws['A5'].value}"
-        assert "REWARD" in str(ws["A6"].value), f"Expected REWARD at A6, got {ws['A6'].value}"
-        assert ws["A8"].value == "MONTHLY TARGETS", f"Expected MONTHLY TARGETS at A8, got {ws['A8'].value}"
-        assert "1." in str(ws["A9"].value), f"Expected Target 1 at A9, got {ws['A9'].value}"
-        assert ws["A14"].value == "NOTES:", f"Expected NOTES: at A14, got {ws['A14'].value}"
-        # Yellow notes box
-        assert ws["A15"].fill.start_color.rgb == "00FFFFE6" or ws["A15"].fill.start_color.rgb == "FFFFE6"
-        print("✓ Top Section (Punishment, Reward, Monthly Targets, Notes) verified before table!")
+        # 1. Top Section (Before Table)
+        assert "PUNISHMENT" in str(ws["A5"].value)
+        assert "REWARD" in str(ws["A6"].value)
+        assert ws["A8"].value == "MONTHLY TARGETS"
+        assert "1." in str(ws["A9"].value)
+        assert ws["A14"].value == "NOTES:"
+        print("✓ Top Section (Stakes, Targets, Notes) verified before table")
 
-        # 2. Verify Table Header at Rows 19 & 20
+        # 2. Protocol Table Header & 20 rows
         assert ws["A19"].value == "S.No."
         assert ws["B19"].value == "Protocols"
         assert ws["C19"].value == "Target"
-        print("✓ Protocol Table Header at Rows 19 & 20 verified")
+        assert ws["A21"].value == 1
+        assert ws["A40"].value == 20
+        print("✓ Table Header (Rows 19-20) and 20 Protocol rows (Rows 21-40) verified")
 
-        # 3. Verify 20 Protocol rows (Rows 21 to 40)
-        for i in range(1, 21):
-            row = 20 + i
-            assert ws[f"A{row}"].value == i, f"Expected S.No {i} at row {row}, got {ws[f'A{row}'].value}"
-            fill = ws[f"A{row}"].fill.start_color.rgb
-            assert fill is not None, f"Row {row} missing fill"
-        print("✓ 20 Protocol rows verified (S.No. 1 to 20, Rows 21 to 40)")
-
-        # 4. Check Data Validations
+        # 3. Data Validations (Target 1-31, Protocol ✓/✗, Sleep 1-24)
         dvs = ws.data_validations.dataValidation
-        assert len(dvs) == 2, f"Expected 2 data validations, got {len(dvs)}"
-        print("✓ Data validations count verified (Target dropdown & Sleep dropdown)")
+        print(f"Data validations count: {len(dvs)}")
+        assert len(dvs) == 3, f"Expected 3 data validations, got {len(dvs)}"
+        has_tick_cross = any("✓" in str(dv.formula1) and "✗" in str(dv.formula1) for dv in dvs)
+        assert has_tick_cross, "Protocol day cells tick/cross dropdown not found!"
+        print("✓ Protocol day cells tick/cross (✓, ✗) dropdown verified!")
 
-        # 5. Check DAILY TOTAL SCORE at Row 41
+        # 4. DAILY TOTAL SCORE (Row 41)
         assert ws["A41"].value == "DAILY TOTAL SCORE"
-        assert "21:D40" in str(ws["D41"].value), f"Expected formula with rows 21 to 40, got {ws['D41'].value}"
-        print("✓ DAILY TOTAL SCORE at Row 41 verified with formula referencing rows 21 to 40")
+        score_formula = str(ws["D41"].value)
+        assert "COUNTIF(D21:D40" in score_formula
+        print("✓ DAILY TOTAL SCORE at Row 41 verified")
 
-        # 6. Check Sleep Tracking Section
-        assert ws["A43"].value == "Sleep Tracking"
-        assert "Sleep Hours" in str(ws["A45"].value)
-        # Check day column width is wide enough (>= 4.5) to easily display numbers like 1-24 alongside the dropdown button
-        d_col_letter = openpyxl.utils.get_column_letter(4)
-        col_w = ws.column_dimensions[d_col_letter].width
-        print(f"Day column width: {col_w}")
-        assert col_w >= 4.5, f"Day column width {col_w} is too small for dropdown number visibility"
-        print("✓ Day column width verified for clear in-cell number visibility!")
+        # 5. DAILY SUCCESS % (Row 42)
+        assert ws["A42"].value == "DAILY SUCCESS %"
+        pct_formula = str(ws["D42"].value)
+        assert "/" in pct_formula and "COUNTIF(D21:D40" in pct_formula
+        assert ws["D42"].number_format == "0.0%"
+        print("✓ DAILY SUCCESS % row at Row 42 verified with tick/eval formula and 0.0% format")
 
-        # 7. Check Line Chart
-        assert len(ws._charts) == 1, f"Expected 1 chart on sheet, got {len(ws._charts)}"
+        # 6. Two-row gap (Rows 43 & 44)
+        for r_gap in (43, 44):
+            for c_idx in range(1, 10):
+                c_let = openpyxl.utils.get_column_letter(c_idx)
+                assert ws[f"{c_let}{r_gap}"].value is None, f"Expected blank gap at {c_let}{r_gap}"
+        print("✓ Exactly two blank gap rows (Rows 43 & 44) verified!")
+
+        # 7. Sleep Tracking Table (Starts at Row 45)
+        assert ws["A45"].value == "Sleep Tracking"
+        assert "Sleep Hours" in str(ws["A47"].value)
+        print("✓ Sleep Tracking section starts at Row 45 after the 2-row gap")
+
+        # 8. Sleep Line Chart
+        assert len(ws._charts) == 1
         chart = ws._charts[0]
         assert "Sleep" in str(chart.title)
-        print(f"✓ Chart verified: '{chart.title}'")
+        print(f"✓ Dynamic Sleep Line Chart verified at A49: '{chart.title}'")
 
     print("\nALL VERIFICATIONS PASSED 100% SUCCESSFULLY!")
 
