@@ -2,6 +2,8 @@ import calendar
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.datavalidation import DataValidation
+from openpyxl.chart import LineChart, Reference
 
 def generate_exact_tracker_excel():
     wb = openpyxl.Workbook()
@@ -24,23 +26,22 @@ def generate_exact_tracker_excel():
         top=THIN_BORDER_GRAY, bottom=THIN_BORDER_GRAY
     )
     BORDER_NOTE = Border(
-        left=Side(border_style="thin", color="E2E8F0"),
-        right=Side(border_style="thin", color="E2E8F0"),
-        top=Side(border_style="thin", color="E2E8F0"),
-        bottom=Side(border_style="thin", color="E2E8F0")
+        left=Side(border_style="thin", color="D1D5DB"),
+        right=Side(border_style="thin", color="D1D5DB"),
+        top=Side(border_style="thin", color="D1D5DB"),
+        bottom=Side(border_style="thin", color="D1D5DB")
     )
 
-    # Color definitions matching the PDF exactly
-    # 5 Group colors for 15 protocol rows (3 rows each)
+    # 5 Group colors for 20 protocol rows (4 rows per group)
     GROUP_COLORS_HEX = [
-        "FFEBEB",  # Soft Red/Pink: RGB(255, 235, 235)
-        "EBF5FF",  # Soft Sky/Blue: RGB(235, 245, 255)
-        "EBFFEB",  # Soft Mint/Green: RGB(235, 255, 235)
-        "FFFFEB",  # Soft Cream/Yellow: RGB(255, 255, 235)
-        "F5EBFF",  # Soft Lavender/Purple: RGB(245, 235, 255)
+        "FFEBEB",  # Soft Red/Pink: RGB(255, 235, 235) - Rows 1-4
+        "EBF5FF",  # Soft Sky/Blue: RGB(235, 245, 255) - Rows 5-8
+        "EBFFEB",  # Soft Mint/Green: RGB(235, 255, 235) - Rows 9-12
+        "FFFFEB",  # Soft Cream/Yellow: RGB(255, 255, 235) - Rows 13-16
+        "F5EBFF",  # Soft Lavender/Purple: RGB(245, 235, 255) - Rows 17-20
     ]
     
-    # Sunday deeper tint in protocol rows (max(0, c-25))
+    # Sunday deeper tint in protocol rows
     SUNDAY_GROUP_COLORS_HEX = [
         "E6D2D2",  # RGB(230, 210, 210)
         "D2DCE6",  # RGB(210, 220, 230)
@@ -53,7 +54,6 @@ def generate_exact_tracker_excel():
     NOTES_FILL = PatternFill(start_color="FFFFE6", end_color="FFFFE6", fill_type="solid") # RGB(255, 255, 230)
     WHITE_FILL = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
 
-    # Quotes from trackergenerator01.py
     MONTH_QUOTES = {
         9: "Win the morning, win the day.",
         10: "Discipline equals freedom.",
@@ -71,12 +71,17 @@ def generate_exact_tracker_excel():
 
     weekdays_abbr = ['M', 'T', 'W', 'Th', 'F', 'Sa', 'Su']
 
+    # Target Dropdown values: 1 to 31
+    target_dropdown_str = ",".join(str(i) for i in range(1, 32))
+    # Sleep Hours Dropdown values: 1 to 24
+    sleep_dropdown_str = ",".join(str(i) for i in range(1, 25))
+
     for year, month in target_months:
         month_name = calendar.month_name[month]
         sheet_title = f"{month_name[:3]} {year}"
         ws = wb.create_sheet(title=sheet_title)
         
-        # Gridlines and Page setup for Landscape A4 print
+        # Gridlines and Page setup
         ws.views.sheetView[0].showGridLines = True
         ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
         ws.page_setup.paperSize = ws.PAPERSIZE_A4
@@ -88,26 +93,22 @@ def generate_exact_tracker_excel():
         first_weekday = calendar.monthrange(year, month)[0] # 0 = Monday, 6 = Sunday
         month_weekdays = [weekdays_abbr[(first_weekday + d) % 7] for d in range(days_in_month)]
 
-        # Columns:
-        # Col A (1): S.No.
-        # Col B (2): Protocols
-        # Col C (3): Target
-        # Col D.. (4 .. 3+days_in_month): Days 1..N
-        # Col after last day: Success %
         first_day_col = 4
         last_day_col = 3 + days_in_month
         success_col = last_day_col + 1
 
+        first_day_let = get_column_letter(first_day_col)
         last_day_letter = get_column_letter(last_day_col)
         success_col_letter = get_column_letter(success_col)
 
-        # Set Column Widths
+        # Set Column Widths:
+        # Increase day columns to 4.8 so numbers selected from dropdowns (1-24) are clearly visible with the arrow!
         ws.column_dimensions['A'].width = 6.5
         ws.column_dimensions['B'].width = 28
         ws.column_dimensions['C'].width = 8.5
         for col_idx in range(first_day_col, last_day_col + 1):
             c_let = get_column_letter(col_idx)
-            ws.column_dimensions[c_let].width = 3.6
+            ws.column_dimensions[c_let].width = 4.8
         ws.column_dimensions[success_col_letter].width = 11.5
 
         # Row 1: Top spacing
@@ -119,7 +120,6 @@ def generate_exact_tracker_excel():
         ws["A2"].font = Font(name=FONT_FAMILY, size=18, bold=True, color="000000")
         ws["A2"].alignment = Alignment(horizontal="left", vertical="center")
 
-        # Quote centered in Row 2 across middle columns
         quote_text = MONTH_QUOTES.get(month, "Win the morning, win the day.")
         quote_start_col = 8
         quote_end_col = last_day_col - 5
@@ -129,7 +129,6 @@ def generate_exact_tracker_excel():
         quote_cell.font = Font(name=FONT_FAMILY, size=11, bold=True, color="000000")
         quote_cell.alignment = Alignment(horizontal="center", vertical="center")
 
-        # Top Right: @surajvansh
         handle_start_col = last_day_col - 4
         ws.merge_cells(start_row=2, start_column=handle_start_col, end_row=2, end_column=success_col)
         handle_cell = ws.cell(row=2, column=handle_start_col)
@@ -149,35 +148,117 @@ def generate_exact_tracker_excel():
         dash_cell.font = Font(name=FONT_FAMILY, size=10, bold=True, color="000000")
         dash_cell.alignment = Alignment(horizontal="center", vertical="center")
 
-        # Row 4: spacing
-        ws.row_dimensions[4].height = 6
+        # Row 4: Spacing
+        ws.row_dimensions[4].height = 5
 
-        # --- Rows 5 & 6: Protocol Table Header ---
+        # =========================================================================
+        # REPOSITIONED TO TOP (BEFORE TABLE):
+        # 1. Punishment & Success (Stakes)
+        # 2. Monthly Targets
+        # 3. Notes
+        # =========================================================================
+
+        # --- Row 5 & 6: Punishment & Success (Reward) ---
         ws.row_dimensions[5].height = 15
         ws.row_dimensions[6].height = 15
 
+        ws.merge_cells(f"A5:{success_col_letter}5")
+        punish_cell = ws["A5"]
+        punish_cell.value = "IF SUCCESS < 80%, PUNISHMENT: ________________________________________________"
+        punish_cell.font = Font(name=FONT_FAMILY, size=8.5, bold=True, color="C80000")
+        punish_cell.alignment = Alignment(horizontal="left", vertical="center")
+
+        ws.merge_cells(f"A6:{success_col_letter}6")
+        reward_cell = ws["A6"]
+        reward_cell.value = "IF SUCCESS > 90%, REWARD: __________________________________________________"
+        reward_cell.font = Font(name=FONT_FAMILY, size=8.5, bold=True, color="007800")
+        reward_cell.alignment = Alignment(horizontal="left", vertical="center")
+
+        # Row 7: Spacing
+        ws.row_dimensions[7].height = 5
+
+        # --- Row 8: Monthly Targets Label ---
+        ws.row_dimensions[8].height = 16
+        ws["A8"] = "MONTHLY TARGETS"
+        ws["A8"].font = Font(name=FONT_FAMILY, size=8.5, bold=True)
+        ws["A8"].alignment = Alignment(horizontal="left", vertical="center")
+
+        # Rows 9 to 12: Monthly Targets (2 columns: 1-4 on left, 5-8 on right)
+        col2_target_start = 16
+        for i in range(1, 5):
+            t_row = 8 + i
+            ws.row_dimensions[t_row].height = 13
+
+            # Column 1 (Targets 1-4)
+            ws.merge_cells(start_row=t_row, start_column=1, end_row=t_row, end_column=col2_target_start - 2)
+            t1_cell = ws.cell(row=t_row, column=1)
+            t1_cell.value = f"{i}. ____________________ : ____________________"
+            t1_cell.font = Font(name=FONT_FAMILY, size=8)
+            t1_cell.alignment = Alignment(horizontal="left", vertical="center")
+
+            # Column 2 (Targets 5-8)
+            i2 = i + 4
+            ws.merge_cells(start_row=t_row, start_column=col2_target_start, end_row=t_row, end_column=last_day_col)
+            t2_cell = ws.cell(row=t_row, column=col2_target_start)
+            t2_cell.value = f"{i2}. ____________________ : ____________________"
+            t2_cell.font = Font(name=FONT_FAMILY, size=8)
+            t2_cell.alignment = Alignment(horizontal="left", vertical="center")
+
+        # Row 13: Spacing
+        ws.row_dimensions[13].height = 5
+
+        # --- Row 14: Notes Section Label ---
+        ws.row_dimensions[14].height = 15
+        ws["A14"] = "NOTES:"
+        ws["A14"].font = Font(name=FONT_FAMILY, size=8.5, bold=True)
+        ws["A14"].alignment = Alignment(horizontal="left", vertical="center")
+
+        # Rows 15 to 17: Notes Yellow Box (Top Before Table)
+        for r_note in range(15, 18):
+            ws.row_dimensions[r_note].height = 13
+        ws.merge_cells(f"A15:{last_day_letter}17")
+        note_box = ws["A15"]
+        note_box.fill = NOTES_FILL
+        note_box.font = Font(name=FONT_FAMILY, size=8.5)
+        note_box.alignment = Alignment(horizontal="left", vertical="top", wrap_text=True)
+        for r in range(15, 18):
+            for c in range(1, last_day_col + 1):
+                ws.cell(row=r, column=c).fill = NOTES_FILL
+                ws.cell(row=r, column=c).border = BORDER_NOTE
+
+        # Row 18: Spacing before main table
+        ws.row_dimensions[18].height = 8
+
+        # =========================================================================
+        # MAIN PROTOCOLS TABLE
+        # =========================================================================
+
+        # --- Rows 19 & 20: Protocol Table Header ---
+        ws.row_dimensions[19].height = 15
+        ws.row_dimensions[20].height = 15
+
         # Merge S.No.
-        ws.merge_cells("A5:A6")
-        ws["A5"] = "S.No."
-        ws["A5"].font = Font(name=FONT_FAMILY, size=8, bold=True)
-        ws["A5"].alignment = Alignment(horizontal="center", vertical="center")
-        for r in (5, 6):
+        ws.merge_cells("A19:A20")
+        ws["A19"] = "S.No."
+        ws["A19"].font = Font(name=FONT_FAMILY, size=8, bold=True)
+        ws["A19"].alignment = Alignment(horizontal="center", vertical="center")
+        for r in (19, 20):
             ws[f"A{r}"].border = BORDER_STANDARD
 
         # Merge Protocols
-        ws.merge_cells("B5:B6")
-        ws["B5"] = "Protocols"
-        ws["B5"].font = Font(name=FONT_FAMILY, size=8, bold=True)
-        ws["B5"].alignment = Alignment(horizontal="center", vertical="center")
-        for r in (5, 6):
+        ws.merge_cells("B19:B20")
+        ws["B19"] = "Protocols"
+        ws["B19"].font = Font(name=FONT_FAMILY, size=8, bold=True)
+        ws["B19"].alignment = Alignment(horizontal="center", vertical="center")
+        for r in (19, 20):
             ws[f"B{r}"].border = BORDER_STANDARD
 
         # Merge Target
-        ws.merge_cells("C5:C6")
-        ws["C5"] = "Target"
-        ws["C5"].font = Font(name=FONT_FAMILY, size=8, bold=True)
-        ws["C5"].alignment = Alignment(horizontal="center", vertical="center")
-        for r in (5, 6):
+        ws.merge_cells("C19:C20")
+        ws["C19"] = "Target"
+        ws["C19"].font = Font(name=FONT_FAMILY, size=8, bold=True)
+        ws["C19"].alignment = Alignment(horizontal="center", vertical="center")
+        for r in (19, 20):
             ws[f"C{r}"].border = BORDER_STANDARD
 
         # Day Number and Weekday Headers
@@ -187,38 +268,50 @@ def generate_exact_tracker_excel():
             is_sunday = (month_weekdays[d - 1] == 'Su')
             header_fill = SUNDAY_HEADER_FILL if is_sunday else WHITE_FILL
 
-            # Row 5: Day number
-            cell_d = ws[f"{c_let}5"]
+            # Row 19: Day number
+            cell_d = ws[f"{c_let}19"]
             cell_d.value = d
             cell_d.font = Font(name=FONT_FAMILY, size=8, bold=True)
             cell_d.alignment = Alignment(horizontal="center", vertical="center")
             cell_d.fill = header_fill
             cell_d.border = BORDER_SUNDAY if is_sunday else BORDER_STANDARD
 
-            # Row 6: Weekday abbreviation
-            cell_w = ws[f"{c_let}6"]
+            # Row 20: Weekday abbreviation
+            cell_w = ws[f"{c_let}20"]
             cell_w.value = month_weekdays[d - 1]
-            cell_w.font = Font(name=FONT_FAMILY, size=7, bold=(is_sunday))
+            cell_w.font = Font(name=FONT_FAMILY, size=7, bold=is_sunday)
             cell_w.alignment = Alignment(horizontal="center", vertical="center")
             cell_w.fill = header_fill
             cell_w.border = BORDER_SUNDAY if is_sunday else BORDER_STANDARD
 
         # Merge Success %
-        ws.merge_cells(f"{success_col_letter}5:{success_col_letter}6")
-        ws[f"{success_col_letter}5"] = "Success %"
-        ws[f"{success_col_letter}5"].font = Font(name=FONT_FAMILY, size=7.5, bold=True)
-        ws[f"{success_col_letter}5"].alignment = Alignment(horizontal="center", vertical="center")
-        for r in (5, 6):
+        ws.merge_cells(f"{success_col_letter}19:{success_col_letter}20")
+        ws[f"{success_col_letter}19"] = "Success %"
+        ws[f"{success_col_letter}19"].font = Font(name=FONT_FAMILY, size=7.5, bold=True)
+        ws[f"{success_col_letter}19"].alignment = Alignment(horizontal="center", vertical="center")
+        for r in (19, 20):
             ws[f"{success_col_letter}{r}"].border = BORDER_STANDARD
 
-        # --- Rows 7 to 21: 15 Protocol Rows (5 color groups of 3 rows) ---
-        first_habit_row = 7
-        last_habit_row = 21
+        # --- Rows 21 to 40: 20 Protocol Rows (5 color groups of 4 rows each) ---
+        first_habit_row = 21
+        total_habits = 20
+        last_habit_row = first_habit_row + total_habits - 1 # 40
 
-        for i in range(1, 16):
+        # Setup DataValidation for Target dropdown (1 to 31)
+        dv_target = DataValidation(
+            type="list",
+            formula1=f'"{target_dropdown_str}"',
+            allow_blank=True,
+            promptTitle="Target Days",
+            prompt="Select monthly target (1-31)"
+        )
+        ws.add_data_validation(dv_target)
+        dv_target.add(f"C{first_habit_row}:C{last_habit_row}")
+
+        for i in range(1, total_habits + 1):
             row = first_habit_row + (i - 1)
             ws.row_dimensions[row].height = 14.5
-            group_idx = (i - 1) // 3
+            group_idx = (i - 1) // 4
             group_fill_hex = GROUP_COLORS_HEX[group_idx]
             sunday_fill_hex = SUNDAY_GROUP_COLORS_HEX[group_idx]
 
@@ -233,14 +326,14 @@ def generate_exact_tracker_excel():
             cell_sn.fill = row_fill
             cell_sn.border = BORDER_STANDARD
 
-            # Col B: Protocols (blank, ready for habit name)
+            # Col B: Protocols (blank for user input)
             cell_proto = ws[f"B{row}"]
             cell_proto.font = Font(name=FONT_FAMILY, size=8.5)
             cell_proto.alignment = Alignment(horizontal="left", vertical="center")
             cell_proto.fill = row_fill
             cell_proto.border = BORDER_STANDARD
 
-            # Col C: Target
+            # Col C: Target (has dropdown 1-31)
             cell_tgt = ws[f"C{row}"]
             cell_tgt.font = Font(name=FONT_FAMILY, size=8)
             cell_tgt.alignment = Alignment(horizontal="center", vertical="center")
@@ -258,13 +351,9 @@ def generate_exact_tracker_excel():
                 cell_day.fill = row_sunday_fill if is_sunday else row_fill
                 cell_day.border = BORDER_SUNDAY if is_sunday else BORDER_STANDARD
 
-            # Col Success %: Dynamic formula supporting numbers (1) and checks (✓, x)
+            # Col Success %: Dynamic formula supporting numbers (1) and checkmarks (✓, x)
             cell_succ = ws[f"{success_col_letter}{row}"]
-            first_day_let = get_column_letter(first_day_col)
-            last_d_let = get_column_letter(last_day_col)
-            
-            # Excel formula: calculates completion rate if protocol has entries
-            calc_expr = f'(COUNT({first_day_let}{row}:{last_d_let}{row}) + COUNTIF({first_day_let}{row}:{last_d_let}{row}, "✓") + COUNTIF({first_day_let}{row}:{last_d_let}{row}, "x") + COUNTIF({first_day_let}{row}:{last_d_let}{row}, "X"))'
+            calc_expr = f'(COUNT({first_day_let}{row}:{last_day_letter}{row}) + COUNTIF({first_day_let}{row}:{last_day_letter}{row}, "✓") + COUNTIF({first_day_let}{row}:{last_day_letter}{row}, "x") + COUNTIF({first_day_let}{row}:{last_day_letter}{row}, "X"))'
             cell_succ.value = f'=IF(ISBLANK(B{row}), "", IF(ISNUMBER(C{row}), IF(C{row}>0, {calc_expr}/C{row}, 0), {calc_expr}/{days_in_month}))'
             cell_succ.font = Font(name=FONT_FAMILY, size=8)
             cell_succ.alignment = Alignment(horizontal="center", vertical="center")
@@ -272,11 +361,10 @@ def generate_exact_tracker_excel():
             cell_succ.border = BORDER_STANDARD
             cell_succ.number_format = "0.0%"
 
-        # --- Row 22: DAILY TOTAL SCORE ---
-        score_row = 22
+        # --- Row 41: DAILY TOTAL SCORE ---
+        score_row = 41
         ws.row_dimensions[score_row].height = 20
         
-        # Merge A22:C22
         ws.merge_cells(f"A{score_row}:C{score_row}")
         score_label = ws[f"A{score_row}"]
         score_label.value = "DAILY TOTAL SCORE"
@@ -289,13 +377,11 @@ def generate_exact_tracker_excel():
             col = first_day_col + (d - 1)
             c_let = get_column_letter(col)
             cell_score = ws[f"{c_let}{score_row}"]
-            # Sum up completed habits for the day
             cell_score.value = f'=IF((COUNT({c_let}{first_habit_row}:{c_let}{last_habit_row}) + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "✓") + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "x") + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "X")) > 0, SUM({c_let}{first_habit_row}:{c_let}{last_habit_row}) + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "✓") + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "x") + COUNTIF({c_let}{first_habit_row}:{c_let}{last_habit_row}, "X"), "")'
             cell_score.font = Font(name=FONT_FAMILY, size=8, bold=True)
             cell_score.alignment = Alignment(horizontal="center", vertical="center")
             cell_score.border = BORDER_STANDARD
 
-        # Success cell for daily score row
         succ_summary = ws[f"{success_col_letter}{score_row}"]
         succ_summary.value = f'=IF(COUNT({success_col_letter}{first_habit_row}:{success_col_letter}{last_habit_row}) > 0, AVERAGE({success_col_letter}{first_habit_row}:{success_col_letter}{last_habit_row}), "")'
         succ_summary.font = Font(name=FONT_FAMILY, size=8, bold=True)
@@ -303,39 +389,23 @@ def generate_exact_tracker_excel():
         succ_summary.border = BORDER_STANDARD
         succ_summary.number_format = "0.0%"
 
-        # --- Row 23: Spacing ---
-        ws.row_dimensions[23].height = 4
+        # Row 42: Spacing
+        ws.row_dimensions[42].height = 6
 
-        # --- Row 24 & 25: Stakes / Reward & Punishment ---
-        ws.row_dimensions[24].height = 14
-        ws.row_dimensions[25].height = 14
+        # =========================================================================
+        # SLEEP TRACKING SECTION & LIVE CHART
+        # =========================================================================
 
-        ws.merge_cells(f"A24:{success_col_letter}24")
-        punish_cell = ws["A24"]
-        punish_cell.value = "IF SUCCESS < 80%, PUNISHMENT: ________________________________________________"
-        punish_cell.font = Font(name=FONT_FAMILY, size=8.5, bold=True, color="C80000") # RGB(200, 0, 0)
-        punish_cell.alignment = Alignment(horizontal="left", vertical="center")
+        # --- Sleep Tracking Header (Rows 43 & 44) ---
+        ws.row_dimensions[43].height = 15
+        ws.row_dimensions[44].height = 15
 
-        ws.merge_cells(f"A25:{success_col_letter}25")
-        reward_cell = ws["A25"]
-        reward_cell.value = "IF SUCCESS > 90%, REWARD: __________________________________________________"
-        reward_cell.font = Font(name=FONT_FAMILY, size=8.5, bold=True, color="007800") # RGB(0, 120, 0)
-        reward_cell.alignment = Alignment(horizontal="left", vertical="center")
-
-        # --- Row 26: Spacing ---
-        ws.row_dimensions[26].height = 4
-
-        # --- Sleep Tracking Header (Rows 27 & 28) ---
-        ws.row_dimensions[27].height = 14
-        ws.row_dimensions[28].height = 14
-
-        # Sleep Tracking Label merged across A27:C28
-        ws.merge_cells("A27:C28")
-        sleep_hdr = ws["A27"]
+        ws.merge_cells("A43:C44")
+        sleep_hdr = ws["A43"]
         sleep_hdr.value = "Sleep Tracking"
         sleep_hdr.font = Font(name=FONT_FAMILY, size=8.5, bold=True)
         sleep_hdr.alignment = Alignment(horizontal="center", vertical="center")
-        for r in (27, 28):
+        for r in (43, 44):
             for c in ("A", "B", "C"):
                 ws[f"{c}{r}"].border = BORDER_STANDARD
 
@@ -345,107 +415,93 @@ def generate_exact_tracker_excel():
             is_sunday = (month_weekdays[d - 1] == 'Su')
             header_fill = SUNDAY_HEADER_FILL if is_sunday else WHITE_FILL
 
-            # Row 27: Day number
-            cell_d = ws[f"{c_let}27"]
+            # Row 43: Day number
+            cell_d = ws[f"{c_let}43"]
             cell_d.value = d
             cell_d.font = Font(name=FONT_FAMILY, size=8, bold=True)
             cell_d.alignment = Alignment(horizontal="center", vertical="center")
             cell_d.fill = header_fill
             cell_d.border = BORDER_SUNDAY if is_sunday else BORDER_STANDARD
 
-            # Row 28: Weekday
-            cell_w = ws[f"{c_let}28"]
+            # Row 44: Weekday
+            cell_w = ws[f"{c_let}44"]
             cell_w.value = month_weekdays[d - 1]
             cell_w.font = Font(name=FONT_FAMILY, size=7, bold=is_sunday)
             cell_w.alignment = Alignment(horizontal="center", vertical="center")
             cell_w.fill = header_fill
             cell_w.border = BORDER_SUNDAY if is_sunday else BORDER_STANDARD
 
-        # Sleep Rows (Rows 29 to 33: 9hrs, 8hrs, 7hrs, 6hrs, 5hrs)
-        sleep_labels = ["9hrs", "8hrs", "7hrs", "6hrs", "5hrs"]
-        for idx, s_label in enumerate(sleep_labels):
-            s_row = 29 + idx
-            ws.row_dimensions[s_row].height = 13.5
+        # --- Row 45: Sleep Hours with Dropdown (1 to 24) for each day ---
+        # Height 20 and width 4.8 ensure numbers (1 to 24) are completely clear & visible like Target box!
+        sleep_row = 45
+        ws.row_dimensions[sleep_row].height = 20
 
-            # Merge A..C for label
-            ws.merge_cells(f"A{s_row}:C{s_row}")
-            lbl_cell = ws[f"A{s_row}"]
-            lbl_cell.value = s_label
-            lbl_cell.font = Font(name=FONT_FAMILY, size=8)
-            lbl_cell.alignment = Alignment(horizontal="center", vertical="center")
-            for c in ("A", "B", "C"):
-                ws[f"{c}{s_row}"].border = BORDER_STANDARD
+        ws.merge_cells(f"A{sleep_row}:C{sleep_row}")
+        sleep_lbl = ws[f"A{sleep_row}"]
+        sleep_lbl.value = "Sleep Hours (1-24)"
+        sleep_lbl.font = Font(name=FONT_FAMILY, size=8.5, bold=True)
+        sleep_lbl.alignment = Alignment(horizontal="center", vertical="center")
+        for c in ("A", "B", "C"):
+            ws[f"{c}{sleep_row}"].border = BORDER_STANDARD
 
-            for d in range(1, days_in_month + 1):
-                col = first_day_col + (d - 1)
-                c_let = get_column_letter(col)
-                is_sunday = (month_weekdays[d - 1] == 'Su')
-                cell_s = ws[f"{c_let}{s_row}"]
-                cell_s.font = Font(name=FONT_FAMILY, size=8)
-                cell_s.alignment = Alignment(horizontal="center", vertical="center")
-                if is_sunday:
-                    cell_s.fill = SUNDAY_HEADER_FILL
-                    cell_s.border = BORDER_SUNDAY
-                else:
-                    cell_s.border = BORDER_STANDARD
+        # DataValidation for Sleep Hours (1 to 24)
+        dv_sleep = DataValidation(
+            type="list",
+            formula1=f'"{sleep_dropdown_str}"',
+            allow_blank=True,
+            promptTitle="Sleep Hours",
+            prompt="Select sleep hours (1-24)"
+        )
+        ws.add_data_validation(dv_sleep)
+        dv_sleep.add(f"{first_day_let}{sleep_row}:{last_day_letter}{sleep_row}")
 
-        # --- Row 34: Spacing ---
-        ws.row_dimensions[34].height = 4
+        for d in range(1, days_in_month + 1):
+            col = first_day_col + (d - 1)
+            c_let = get_column_letter(col)
+            is_sunday = (month_weekdays[d - 1] == 'Su')
+            cell_s = ws[f"{c_let}{sleep_row}"]
+            cell_s.font = Font(name=FONT_FAMILY, size=9, bold=True, color="000000")
+            cell_s.alignment = Alignment(horizontal="center", vertical="center")
+            cell_s.number_format = "0"
+            if is_sunday:
+                cell_s.fill = SUNDAY_HEADER_FILL
+                cell_s.border = BORDER_SUNDAY
+            else:
+                cell_s.border = BORDER_STANDARD
 
-        # --- Row 35: Notes Section Label ---
-        ws.row_dimensions[35].height = 15
-        ws["A35"] = "NOTES:"
-        ws["A35"].font = Font(name=FONT_FAMILY, size=8.5, bold=True)
-        ws["A35"].alignment = Alignment(horizontal="left", vertical="center")
+        # --- Sleep Tracking Line Chart (Row 47 to Row 60) ---
+        chart = LineChart()
+        chart.title = "Daily Sleep Trend (Hours vs Day)"
+        chart.style = 13
+        chart.y_axis.title = "Hours"
+        chart.x_axis.title = "Day"
+        chart.y_axis.scaling.min = 0
+        chart.y_axis.scaling.max = 24
+        chart.width = 24
+        chart.height = 7.5
+        chart.legend = None
 
-        # Rows 36 to 38: Notes Yellow Box
-        for r_note in range(36, 39):
-            ws.row_dimensions[r_note].height = 13
-        ws.merge_cells(f"A36:{last_day_letter}38")
-        note_box = ws["A36"]
-        note_box.fill = NOTES_FILL
-        note_box.font = Font(name=FONT_FAMILY, size=8.5)
-        note_box.alignment = Alignment(horizontal="left", vertical="top", wrap_text=True)
-        for r in range(36, 39):
-            for c in range(1, last_day_col + 1):
-                ws.cell(row=r, column=c).fill = NOTES_FILL
-                ws.cell(row=r, column=c).border = BORDER_NOTE
+        # Data from Row 45 (Sleep Hours)
+        data = Reference(ws, min_col=first_day_col, min_row=sleep_row, max_col=last_day_col, max_row=sleep_row)
+        # Categories from Row 43 (Day Numbers)
+        categories = Reference(ws, min_col=first_day_col, min_row=43, max_col=last_day_col, max_row=43)
 
-        # --- Row 39: Spacing ---
-        ws.row_dimensions[39].height = 6
+        chart.add_data(data, titles_from_data=False, from_rows=True)
+        chart.set_categories(categories)
 
-        # --- Row 40: Monthly Targets Label ---
-        ws.row_dimensions[40].height = 16
-        ws["A40"] = "MONTHLY TARGETS"
-        ws["A40"].font = Font(name=FONT_FAMILY, size=8.5, bold=True)
-        ws["A40"].alignment = Alignment(horizontal="left", vertical="center")
+        if chart.series:
+            series = chart.series[0]
+            series.graphicalProperties.line.solidFill = "3B82F6"
+            series.graphicalProperties.line.width = 25000
+            series.marker.symbol = "circle"
+            series.marker.size = 5
+            series.marker.graphicalProperties.solidFill = "1D4ED8"
 
-        # Rows 41 to 44: Monthly Targets (2 columns: 1-4 and 5-8)
-        col2_target_start = 16 # Start around column P
-        for i in range(1, 5):
-            t_row = 40 + i
-            ws.row_dimensions[t_row].height = 13
-
-            # Column 1 (Targets 1-4)
-            ws.merge_cells(start_row=t_row, start_column=1, end_row=t_row, end_column=col2_target_start - 2)
-            t1_cell = ws.cell(row=t_row, column=1)
-            t1_cell.value = f"{i}. ____________________ : ____________________"
-            t1_cell.font = Font(name=FONT_FAMILY, size=7.5)
-            t1_cell.alignment = Alignment(horizontal="left", vertical="center")
-
-            # Column 2 (Targets 5-8)
-            i2 = i + 4
-            ws.merge_cells(start_row=t_row, start_column=col2_target_start, end_row=t_row, end_column=last_day_col)
-            t2_cell = ws.cell(row=t_row, column=col2_target_start)
-            t2_cell.value = f"{i2}. ____________________ : ____________________"
-            t2_cell.font = Font(name=FONT_FAMILY, size=7.5)
-            t2_cell.alignment = Alignment(horizontal="left", vertical="center")
+        ws.add_chart(chart, "A47")
 
     output_filename = "Habit_Tracker_Sep_Dec_2026.xlsx"
     wb.save(output_filename)
-    # Also save as Habit_Tracker_2026_2027.xlsx to replace the old multi-year file with the clean requested 4-month tracker
-    wb.save("Habit_Tracker_2026_2027.xlsx")
-    print(f"Workbook successfully saved to {output_filename} and Habit_Tracker_2026_2027.xlsx")
+    print(f"Workbook successfully saved to {output_filename}")
 
 if __name__ == "__main__":
     generate_exact_tracker_excel()
