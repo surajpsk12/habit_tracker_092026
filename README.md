@@ -1,6 +1,6 @@
-# 📊 Ultimate Habit & Sleep Tracker (2026 – 2030)
+# 📊 Ultimate Habit, Sleep & Analytics Tracker (2026 – 2030)
 
-Welcome to the **Ultimate Habit & Sleep Tracker**! This workbook is an all-in-one monthly habit, goal, and sleep tracking system spanning **52 monthly sheets from September 2026 through December 2030**.
+Welcome to the **Ultimate Habit, Sleep & Analytics Tracker**! This workbook is an all-in-one monthly habit execution, domain analytics, and sleep tracking system spanning **52 monthly sheets from September 2026 through December 2030**.
 
 The workbook is located at:
 📁 **[`Habit_Tracker_2026_2030.xlsx`](./Habit_Tracker_2026_2030.xlsx)**
@@ -8,48 +8,62 @@ The workbook is located at:
 ---
 
 ## 📑 Table of Contents
-1. [Overview & Key Highlights](#-overview--key-highlights)
-2. [Workbook Layout & Anatomy](#-workbook-layout--anatomy)
+1. [Overview & Highlights](#-overview--highlights)
+2. [Visual Architecture & Anatomy](#-visual-architecture--anatomy)
 3. [Step-by-Step Usage Guide](#-step-by-step-usage-guide)
    - [1. Monthly Setup (Targets & Notes)](#1-monthly-setup-targets--notes)
-   - [2. Defining Your Protocols (Habits)](#2-defining-your-protocols-habits)
-   - [3. Daily Check-Ins (Tick & Cross Flow)](#3-daily-check-ins-tick--cross-flow)
-   - [4. Understanding Scores & Percentages](#4-understanding-scores--percentages)
-   - [5. Stakes: Punishments & Rewards](#5-stakes-punishments--rewards)
-   - [6. Sleep Tracking & Live Chart](#6-sleep-tracking--live-chart)
-4. [Color Coding & Visual Aesthetics](#-color-coding--visual-aesthetics)
-5. [Frequently Asked Questions (FAQ)](#-frequently-asked-questions-faq)
-6. [Developer & Regeneration Guide](#-developer--regeneration-guide)
+   - [2. Protocols & Domain Categories](#2-protocols--domain-categories)
+   - [3. Daily Tracking Flow & "Today" Highlighting](#3-daily-tracking-flow--today-highlighting)
+   - [4. Scoring, Formulas & Auto-Discard](#4-scoring-formulas--auto-discard)
+   - [5. Sleep Tracking & Dynamic Line Chart](#5-sleep-tracking--dynamic-line-chart)
+4. [End-of-Month Analytics Suite](#-end-of-month-analytics-suite)
+   - [Executive KPI Cards](#1-executive-monthly-kpi-cards)
+   - [Weekly Slump Detector & Chart](#2-weekly-performance-slump-detector--chart)
+   - [Category Domain Breakdown & Chart](#3-life-domain--category-breakdown--chart)
+   - [Sleep vs. Productivity Correlation Analysis](#4-sleep--productivity-correlation-analysis)
+   - [Annual & Quarterly Review Data Bridge](#5-standardized-annual--quarterly-data-bridge)
+   - [Monthly Retrospective Memo Box](#6-monthly-retrospective--action-plan)
+5. [Color Palette Reference](#-color-palette-reference)
+6. [Frequently Asked Questions (FAQ)](#-frequently-asked-questions-faq)
+7. [Developer & Verification Guide](#-developer--verification-guide)
 
 ---
 
-## 🌟 Overview & Key Highlights
+## 🌟 Overview & Highlights
 
-- **52 Complete Monthly Sheets**: Every single month from **September 2026** to **December 2030**.
+- **52 Complete Monthly Sheets**: Every single month from **September 2026 through December 2030**.
 - **Dynamic Calendar Logic**: Exact number of days for 30-day months, 31-day months, and leap years (e.g., February 2028 with 29 days).
-- **20 Protocol Slots**: Room for up to 20 daily habits with customizable targets.
-- **Smart Auto-Discard Logic**: Incomplete/unselected habit rows do not penalize your daily score.
-- **Dynamic Conditional Formatting**: Cells automatically light up in green for completed tasks (`✓`) and red for missed tasks (`✗`).
+- **20 Protocol Slots**: Room for up to 20 habits with category tagging and monthly targets (1–31).
+- **Life Domain Tagging**: Classify habits across 6 domains (`Health & Fitness`, `Mindset & Learning`, `Career & Focus`, `Personal & Home`, `Finance & Wealth`, `Other`).
+- **Dynamic "Today" Highlighter**: The current day's column lights up automatically in warm gold based on `=TODAY()`.
+- **Smart Auto-Discard Logic**: Incomplete/unselected habit rows are auto-discarded from daily scores.
+- **Dynamic Conditional Formatting**: Cells automatically turn **Soft Green** for completed (`✓`) and **Soft Red** for missed (`✗`).
 - **Done vs Target Tracking**: View exact counts (`24/30`) alongside percentage completions.
-- **Dedicated Sleep Tracker & Live Chart**: Track sleep hours (1–24) with an interactive line chart.
-- **Accountability Stakes**: Clear sections for monthly reward and penalty commitments.
+- **Dedicated Sleep Tracking & Live Chart**: Track sleep hours (1–24) with a synchronized trend curve.
+- **3 Interactive Charts per Sheet**:
+  1. *Daily Sleep Trend Line Chart*
+  2. *Weekly Momentum Trend Column Chart*
+  3. *Performance by Domain Bar Chart*
+- **Sleep & Productivity Correlation Engine**: Measures your quantified productivity boost on well-rested days (≥7 hrs) vs. deficit days (<7 hrs).
+- **Quarterly & Annual Data Bridge**: Standardized export row allowing seamless multi-month aggregation.
+- **Monthly Retrospective Coaching Box**: End-of-month reflection on Wins, Friction Points, and Next Month's Action Plan.
 
 ---
 
-## 🗺️ Workbook Layout & Anatomy
+## 🗺️ Visual Architecture & Anatomy
 
-Each sheet is structured vertically in a clean, logical sequence:
+Each monthly sheet follows an intuitive top-to-bottom layout:
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ 1. HEADER: Sheet Title (Month & Year) + Rotating Motivational Quote        │
+│ 1. HEADER: Title (Month & Year) + Rotating Motivational Quote               │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ 2. TOP SECTION:                                                             │
-│    • MONTHLY TARGETS: 8 major monthly milestone boxes (in 2 columns)        │
-│    • NOTES CONTAINER: Soft yellow memo space for reflections & strategies   │
+│    • MONTHLY TARGETS: 8 milestone goal boxes across 2 columns               │
+│    • NOTES CONTAINER: Soft yellow memo space for strategies & reflections   │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ 3. MAIN PROTOCOLS TABLE (20 Rows):                                          │
-│    • S.No. (1 to 20) | Protocol Name | Target (1-31 dropdown)               │
+│    • S.No. (1 to 20) | Protocols | Category (Dropdown) | Target (Dropdown)  │
 │    • Days (1 to 30/31): In-cell dropdowns for '✓' or '✗'                   │
 │    • Success %: Automated completion rate for the habit                     │
 │    • Done / Target: Exact count ratio (e.g., 25/30)                         │
@@ -59,14 +73,22 @@ Each sheet is structured vertically in a clean, logical sequence:
 │    • DAILY SUCCESS %: Formatted percentage (e.g., 80.0%)                    │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ 5. ACCOUNTABILITY STAKES:                                                   │
-│    • PUNISHMENT: Stakes for failing to meet monthly goals                   │
-│    • REWARD: Celebration incentive for achieving your goals                 │
+│    • PUNISHMENT: Stakes for failing to meet monthly goals (<80%)            │
+│    • REWARD: Celebration incentive for achieving your goals (>90%)          │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│ 6. SLEEP TRACKING TABLE:                                                    │
-│    • Night Indigo header with 1–24 hours dropdown per day                   │
+│ 6. SLEEP TRACKING SECTION & DYNAMIC CHART:                                  │
+│    • Twilight-themed Sleep Hours row (1–24 dropdown)                        │
+│    • Interactive Daily Sleep Trend Line Chart (Hours vs. Day)               │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│ 7. LIVE SLEEP TREND CHART:                                                  │
-│    • Interactive line graph displaying Sleep Hours vs. Day of the Month     │
+│ 7. EXECUTIVE MONTHLY KPI CARDS:                                             │
+│    [ Monthly Success Rate ] [ Active Protocols ] [ Perfect Days ] [ Avg Sleep]
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 8. END-OF-MONTH ANALYTICS & CHARTS:                                         │
+│    • Left: Weekly Slump Detector Table + Weekly Momentum Column Chart       │
+│    • Right: Life Domain Breakdown Table + Domain Performance Bar Chart      │
+│    • Sleep & Productivity Correlation Engine (Impact of ≥7h vs <7h sleep)  │
+│    • Standardized Annual / Quarterly Review Data Bridge (Row 92)            │
+│    • Monthly Retrospective Box (Wins, Friction Points, Action Plan)         │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -78,102 +100,141 @@ Each sheet is structured vertically in a clean, logical sequence:
 At the beginning of each month:
 1. Navigate to the month tab (e.g., `Sep 2026`).
 2. Under **MONTHLY TARGETS** (Rows 6–9), write down up to 8 core priorities or milestones for the month across the two columns (`1.` through `8.`).
-3. Under **NOTES:** (Row 12), jot down focus areas, mindset cues, or weekly gameplans.
+3. Under **NOTES:** (Row 12), write your focus areas, mindset cues, or weekly gameplans in the pale yellow memo container.
 
-### 2. Defining Your Protocols (Habits)
+### 2. Protocols & Domain Categories
 In the main protocol table (Rows 18–37):
-1. **Protocol Name (Column B)**: Enter your habit or routine (e.g., *Morning Run*, *Read 20 Pages*, *Meditation*, *No Sugar*).
-2. **Target (Column C)**: Click the cell to open the dropdown and select your goal for the number of days you aim to complete this habit this month (from `1` to `31`).
+1. **Protocols (Column B)**: Enter your habit or routine (e.g., *Gym Session*, *Deep Work 2h*, *Read 20 Pages*, *Meditation*).
+2. **Category (Column C)**: Select the life domain from the dropdown:
+   - `Health & Fitness`
+   - `Mindset & Learning`
+   - `Career & Focus`
+   - `Personal & Home`
+   - `Finance & Wealth`
+   - `Other`
+3. **Target (Column D)**: Select your monthly target days from the dropdown (`1` to `31`).
 
-### 3. Daily Check-Ins (Tick & Cross Flow)
-For each day:
-1. Click the cell corresponding to your habit and current day (Columns D through AH/AI/AJ).
-2. Use the dropdown arrow to select:
-   - `✓` (Checkmark): You completed the protocol. The cell turns **Soft Green**.
-   - `✗` (Cross): You missed or skipped the protocol. The cell turns **Soft Red**.
-   - *Blank / Nothing*: The habit was not tracked or not active yet. The cell remains its neutral pastel color.
+### 3. Daily Tracking Flow & "Today" Highlighting
+- **"Today" Column Highlight**: When opening the sheet for the current month, the current day column header automatically lights up in warm gold (`#FEF08A`) so your eyes immediately locate today's column!
+- For each day:
+  1. Click the cell corresponding to your habit and today's day (Columns E through AH/AI/AJ).
+  2. Use the dropdown arrow to select:
+     - `✓` (Checkmark): Task completed. The cell turns **Soft Green** (`#DCFCE7`).
+     - `✗` (Cross): Task missed. The cell turns **Soft Red** (`#FEE2E2`).
+     - *Blank*: Unmarked / inactive habit. The cell retains its gentle pastel group color.
 
-### 4. Understanding Scores & Percentages
+### 4. Scoring, Formulas & Auto-Discard
 
-#### How the Auto-Discard Logic Works
-Only active items are evaluated. If you have only 8 active habits marked with `✓` or `✗`, the denominator is **8**, not 20:
+#### Smart Auto-Discard Logic
+Unmarked habits are excluded from that day's score so new habits added mid-month never damage your record:
 $$\text{Daily Total Score} = \frac{\text{Count of } ✓}{\text{Count of } ✓ + \text{Count of } ✗}$$
 
-- **Example 1**: You evaluate 10 habits today. 8 are `✓` and 2 are `✗`.
+- **Example**: If 10 habits are marked today with 8 `✓` and 2 `✗`:
   - **DAILY TOTAL SCORE (Row 38)** displays: `8/10`
   - **DAILY SUCCESS % (Row 39)** displays: `80.0%`
-- **Example 2**: You only track 5 habits on a busy day. 5 are `✓` and 0 are `✗`.
-  - **DAILY TOTAL SCORE** displays: `5/5`
-  - **DAILY SUCCESS %** displays: `100.0%`
-- **Unmarked cells**: Any habit left blank is completely excluded so your score is never unfairly penalized.
+- **Summary Columns on the Right**:
+  - `Success %`: $\frac{\text{Days Done}}{\text{Target}}$ as a percentage.
+  - `Done / Target`: Displays the exact count (e.g., `24/30`).
+  - Monthly Totals (bottom-right cell) shows total checks done vs. total targets (e.g., `185/220`).
 
-#### Summary Columns on the Right
-- **`Success %`**: Shows $\frac{\text{Total Days Completed}}{\text{Target}}$ as a percentage.
-- **`Done / Target`**: Displays the exact fractional score (e.g. `24/30`).
-- **Monthly Totals**: The bottom-right summary cell under `Done / Target` shows your cumulative monthly score vs. total targets (e.g., `185/220`).
-
-### 5. Stakes: Punishments & Rewards
-Accountability creates consistency:
-- **PUNISHMENT (Row 41)**: Enter what you must do if you fail to reach your monthly commitment (e.g., *Donate $50*, *Cold shower for a week*).
-- **REWARD (Row 42)**: Enter your celebration reward for hitting your targets (e.g., *Weekend trip*, *Buy new running shoes*).
-
-### 6. Sleep Tracking & Live Chart
-1. In the **Sleep Tracking** section (Row 47), click on the day cell.
-2. Select your hours of sleep from the dropdown (`1` to `24`).
-3. The in-cell number will be clearly visible.
-4. The **Daily Sleep Trend** line chart directly below (cell `A49`) will dynamically plot your sleep curve across the month.
+### 5. Sleep Tracking & Dynamic Line Chart
+1. In the **Sleep Tracking** section (Row 47), select your sleep hours from the dropdown (`1` to `24`).
+2. Numbers appear centered with high-contrast night-indigo font.
+3. The **Daily Sleep Trend** chart (Row 49) automatically updates its blue curve across the month.
 
 ---
 
-## 🎨 Color Coding & Visual Aesthetics
+## 📈 End-of-Month Analytics Suite
 
-| Element | Color Palette | Hex Code | Description |
+Scroll below the sleep chart to access the automated monthly analytics:
+
+### 1. Executive Monthly KPI Cards
+Four color-coded executive stat cards summarizing monthly performance:
+- 🟢 **Monthly Success Rate**: Overall completion percentage against targets.
+- 🔵 **Active Protocols**: Total count of active habits out of 20 slots.
+- 🟡 **Perfect Days (100%)**: Number of days where all marked habits were achieved.
+- 🟣 **Avg Sleep Duration**: Average sleep hours per night across logged days.
+
+### 2. Weekly Performance (Slump Detector) & Chart
+- Breaks down your month into **Week 1 (Days 1–7)**, **Week 2 (Days 8–14)**, **Week 3 (Days 15–21)**, **Week 4 (Days 22–28)**, and **Week 5 (Days 29–end)**.
+- Compares Checks Done, Evaluated Count, and Success Rate for each week.
+- Displays the **Weekly Momentum Trend** column chart to immediately identify mid-month slumps or weekend drop-offs.
+
+### 3. Life Domain / Category Breakdown & Chart
+- Aggregates your active habits, targets, completed checks, and completion percentage by life domain:
+  - *Health & Fitness*
+  - *Mindset & Learning*
+  - *Career & Focus*
+  - *Personal & Home*
+  - *Finance & Wealth*
+- Includes a dedicated **Domain Performance** column chart to visualize which areas of your life received the most consistent execution.
+
+### 4. Sleep & Productivity Correlation Analysis
+- Categorizes days into **Optimal Rest (≥ 7 Hours)** vs. **Sleep Deficit (< 7 Hours)**.
+- Automatically calculates:
+  - Average habit completion % on well-rested days.
+  - Average habit completion % on sleep deficit days.
+  - **Rest Advantage**: Quantifies the exact percentage boost in habit execution when you get 7+ hours of sleep!
+  - Dynamic AI Callout: *"You complete X% MORE habits on days with 7+ hours of sleep!"*
+
+### 5. Standardized Annual & Quarterly Data Bridge
+- Standardized data row at **Row 92** containing:
+  `Month | Year | Active Habits | Target Days | Done Checks | Success % | Perfect Days | Avg Sleep | Best Week | Top Life Domain`
+- **How to Use**: Reference or copy Row 92 directly into your Annual or Quarterly review dashboards.
+
+### 6. Monthly Retrospective & Action Plan
+Three structured coaching boxes for end-of-month self-reflection:
+- 🏆 **Monthly Wins & Highlights**: Top victories and effortless consistency.
+- ⚠️ **Friction Points & Root Causes**: Triggers of skipped days and energy drains.
+- 🎯 **3 Key Adjustments for Next Month**: Environment tweaks and non-negotiable protocols.
+
+---
+
+## 🎨 Color Palette Reference
+
+| Element | Theme Name | Hex Code | Visual Purpose |
 | :--- | :--- | :--- | :--- |
-| **Habit Group 1** | Sky Blue | `#E0F2FE` | Clean, refreshing start (Rows 18–21) |
-| **Habit Group 2** | Soft Lavender | `#F3E8FF` | Calming mental focus (Rows 22–25) |
-| **Habit Group 3** | Warm Sand | `#FEF3C7` | Energizing amber pastel (Rows 26–29) |
-| **Habit Group 4** | Cool Slate | `#F1F5F9` | Neutral modern slate (Rows 30–33) |
-| **Habit Group 5** | Periwinkle | `#EEF2FF` | Harmonious twilight blue (Rows 34–37) |
-| **Success Cell (`✓`)** | Mint Green | `#DCFCE7` | High-contrast accomplishment indicator |
-| **Missed Cell (`✗`)** | Soft Coral Red | `#FEE2E2` | Gentle accountability alert |
-| **Sleep Header** | Deep Night Indigo | `#1E1B4B` | Elegant night-sky theme |
-| **Sleep Day Cells** | Bedtime Blue | `#EEF2FF` | High contrast for dropdown numbers |
-| **Notes Box** | Pale Memo Yellow | `#FFFFE6` | Familiar sticky-note aesthetic |
+| **Habit Group 1** | Sky Blue | `#E0F2FE` | Fresh, focused start (Rows 18–21) |
+| **Habit Group 2** | Lavender | `#F3E8FF` | Calm mental flow (Rows 22–25) |
+| **Habit Group 3** | Warm Sand | `#FEF3C7` | Warm, energizing amber (Rows 26–29) |
+| **Habit Group 4** | Cool Slate | `#F1F5F9` | Balanced slate (Rows 30–33) |
+| **Habit Group 5** | Periwinkle | `#EEF2FF` | Harmonious twilight (Rows 34–37) |
+| **Completed Cell (`✓`)** | Mint Emerald | `#DCFCE7` | High-contrast accomplishment |
+| **Missed Cell (`✗`)** | Soft Coral | `#FEE2E2` | Gentle accountability |
+| **"Today" Column** | Golden Glow | `#FEF08A` | Automatic location indicator |
+| **Sleep Header** | Night Indigo | `#1E1B4B` | Sleep theme header |
+| **Sleep Day Cells** | Bedtime Blue | `#EEF2FF` | Calming contrast for sleep hours |
+| **Notes Box** | Pale Memo Yellow | `#FFFFE6` | Sticky-note memo space |
 
 ---
 
 ## ❓ Frequently Asked Questions (FAQ)
 
-### Q: Can I use this in Google Sheets or Microsoft Excel?
-**A**: Yes! The workbook is standard `.xlsx` (OpenXML). It opens natively in **Microsoft Excel (Desktop, Web, & Mobile)**, **Google Sheets**, and **LibreOffice Calc**. Dropdowns and formulas are standard Excel formulas (`COUNTIF`, `SUM`, `IFERROR`).
+### Q: Can I use this in Google Sheets, Microsoft Excel, or LibreOffice?
+**A**: Yes! The file is standard `.xlsx` (OpenXML). All formulas (`COUNTIF`, `SUMIF`, `AVERAGEIF`, `IFERROR`, `INDEX/MATCH`) and charts are natively supported across Microsoft Excel (Desktop, Web, Mobile), Google Sheets, and LibreOffice Calc.
 
-### Q: What if I only want to track 6 habits instead of 20?
-**A**: Simply fill in 6 rows and leave the other 14 rows blank. Because of the built-in auto-discard logic, blank rows will never count toward your daily score or percentages.
+### Q: What happens if I track fewer than 20 habits?
+**A**: Simply leave unused rows blank. Because of the built-in auto-discard logic, blank rows will never count toward your daily score, weekly totals, or domain statistics.
 
-### Q: Can I add a new habit in the middle of the month?
-**A**: Absolutely. Type the new habit name in an empty protocol row, choose its target, and start selecting `✓` or `✗` from today onwards. Past unselected days for that habit will not affect your earlier scores.
-
-### Q: Why do the column widths look slightly wider than normal?
-**A**: Day column widths are calibrated to `4.8` so that Excel's dropdown arrow button does not hide or truncate two-digit numbers (like `10`, `12`, or `24`).
+### Q: How do I add a new habit mid-month?
+**A**: Enter the habit name in Column B, select its category in Column C, select its target in Column D, and start selecting `✓` or `✗` from today onwards. Past blank days are excluded automatically.
 
 ---
 
-## 💻 Developer & Regeneration Guide
-
-If you ever need to customize the generator or add more years beyond 2030:
+## 💻 Developer & Verification Guide
 
 - **Generator Script**: [`create_excel_tracker.py`](./create_excel_tracker.py)
-  - Contains full layout logic, styles, conditional formatting, and formulas.
-  - To regenerate the workbook:
+  - Contains complete workbook generation logic, conditional formatting, analytics tables, and charts.
+  - To regenerate all 52 sheets:
     ```bash
     python create_excel_tracker.py
     ```
 - **Automated Verification Script**: [`verify_excel_tracker.py`](./verify_excel_tracker.py)
-  - Validates all 52 sheets, headers, colors, conditional formatting, and formulas:
+  - Tests all 52 sheets, verifying column structures, categories, KPI cards, tables, correlation formulas, and all 3 charts per sheet:
     ```bash
     python verify_excel_tracker.py
     ```
 
 ---
 
-*Enjoy tracking your habits and building momentum every single day from 2026 through 2030!* 🚀
+*Transform your consistency, sleep, and performance month by month from 2026 to 2030!* 🚀
